@@ -1,0 +1,16 @@
+bot:
+  token: 5990503214:AAGAlWdWPbKQCSvZsRfR9l48tAkuqTcFdws
+  name: psa_dump_dev
+  validateData:
+    channelID: -1001773791815
+    channelURL: "https://t.me/dumpChenDev"
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/autodump
+    username: autodump_user
+    password: root
+    driver-class-name: org.postgresql.Driver
+
+tempStorage:
+  host: 127.0.0.1
+  port: 6379
