@@ -1,4 +1,4 @@
-package com.bot.bot;
+package com.bot.processor;
 
 public interface ITempStorage {
     String get(String key);

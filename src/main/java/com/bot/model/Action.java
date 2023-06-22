@@ -1,5 +1,5 @@
 package com.bot.model;
 
 public enum Action {
-    REGISTRATION, SEARCH, SALE
+    REGISTRATION, SEARCH, SALE, CABINET, ADMIN
 }
