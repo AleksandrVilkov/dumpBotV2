@@ -18,7 +18,6 @@ public class Data {
     private List<String> photos;
     private Region region;
     private String countyCode;
-    private Navigation navigation;
     @Override
     public String toString() {
         ObjectMapper objectMapper = new ObjectMapper();

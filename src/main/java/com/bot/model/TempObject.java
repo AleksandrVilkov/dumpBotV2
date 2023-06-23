@@ -8,12 +8,19 @@ import lombok.*;
 @Setter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor
 public class TempObject implements Cloneable {
-    Action action;
-    String userId;
-    int step;
-    Data data;
+    private Action action;
+    private String userId;
+    private int step;
+    private SelectedData selectedData;
+    private OptionData option;
+    private Navigation navigation;
+
+    public TempObject() {
+        this.selectedData = new SelectedData();
+        this.option = new OptionData();
+        this.navigation = new Navigation();
+    }
 
     @Override
     public String toString() {

@@ -35,6 +35,16 @@ public class Util {
             return "";
         }
     }
+    public static String getUserName(Update update) {
+        if (update.hasMessage()) {
+            return String.valueOf(update.getMessage().getFrom().getUserName());
+        }
+        if (update.hasCallbackQuery()) {
+            return String.valueOf(update.getCallbackQuery().getFrom().getUserName());
+        } else {
+            return "";
+        }
+    }
 
     public static int getMessageId(Update update) {
         if (update.hasMessage()) {

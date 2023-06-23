@@ -3,10 +3,8 @@ package com.bot.processor.registration;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
+import com.bot.processor.*;
 import com.bot.processor.Action;
-import com.bot.processor.ICarStorage;
-import com.bot.processor.IRegionStorage;
-import com.bot.processor.ITempStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -23,6 +21,8 @@ public class RegistrationAction implements Action {
     ICarStorage carStorage;
     @Autowired
     ITempStorage tempStorage;
+    @Autowired
+    IUserStorage userStorage;
 
     @Override
     public List<SendMessage> execute(Update update, TempObject tempObject) {
@@ -70,9 +70,9 @@ public class RegistrationAction implements Action {
         Map<String, String> datas = new HashMap<>();
         for (String c : countries) {
             TempObject newTemp = tempObject.clone();
-            Data data = new Data();
-            data.setCountyCode(c);
-            newTemp.setData(data);
+            OptionData optionData = new OptionData();
+            optionData.setCountryCode(c);
+            newTemp.setOption(optionData);
             newTemp.setStep(1);
             String key = getKeyAndSaveTemp(newTemp);
             datas.put(c, key);
@@ -82,11 +82,13 @@ public class RegistrationAction implements Action {
 
     private List<SendMessage> secondStep(Update update, TempObject tempObject) {
         String text = "Выбери город:";
-        String countryCode = tempObject.getData().getCountyCode();
+        confirmCountrySelection(tempObject); //Запоминаем выбо страны
+        String countryCode = tempObject.getSelectedData().getSelectedRegistrationData().getCountryCode();
+
         int commonRegionCount = regionStorage.countAllByCountryCode(countryCode);
         int countRegionsOnPage = 8;
 
-        Navigation navigation = tempObject.getData().getNavigation();
+        Navigation navigation = tempObject.getNavigation();
 
         int currentPage = RegistrationHelper.defineCurrentPage(navigation);
         int nextPage = RegistrationHelper.defineNextPage(navigation, currentPage);
@@ -98,13 +100,14 @@ public class RegistrationAction implements Action {
         if (currentPage != 0) {
             navi.putAll(RegistrationHelper.createBackBntData(tempObject, nextPage, tempStorage));
         }
-        if ((currentPage + 1) * countRegionsOnPage < commonRegionCount || navigation.isBack()) {
+        if ((currentPage + 1) * countRegionsOnPage < commonRegionCount || (navigation != null && navigation.isBack())) {
             navi.putAll(RegistrationHelper.createNextBntData(tempObject, nextPage, tempStorage));
         }
         return createMessages(text, update, Util.createKeyboardWithNavi(datas, navi));
     }
 
     private List<SendMessage> thirdStep(Update update, TempObject tempObject) {
+        confirmRegionSelection(tempObject);
         String text = "Выбери концерн, к которому относится твой автомобиль:";
         List<Car> cars = carStorage.getCars();
         Map<String, List<Car>> carByConcern = new HashMap<>();
@@ -120,6 +123,7 @@ public class RegistrationAction implements Action {
                     }
                 }
         );
+
         Map<String, String> data = getCarData(tempObject, carByConcern, 3);
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
@@ -128,7 +132,7 @@ public class RegistrationAction implements Action {
         String text = "Теперь выбери бренд:";
 
         Map<String, List<Car>> result = new HashMap<>();
-        tempObject.getData().getCars().forEach(
+        tempObject.getOption().getCarList().forEach(
                 car -> {
                     String brand = car.getBrand().getName();
                     if (result.containsKey(brand)) {
@@ -149,7 +153,7 @@ public class RegistrationAction implements Action {
         String text = "Теперь выбери модель:";
 
         Map<String, List<Car>> result = new HashMap<>();
-        tempObject.getData().getCars().forEach(
+        tempObject.getOption().getCarList().forEach(
                 car -> {
                     String model = car.getModel().getName();
                     if (result.containsKey(model)) {
@@ -162,7 +166,7 @@ public class RegistrationAction implements Action {
                 }
         );
 
-        Map<String, String> data = getCarData(tempObject,result,5);
+        Map<String, String> data = getCarData(tempObject, result, 5);
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
@@ -170,7 +174,7 @@ public class RegistrationAction implements Action {
         String text = "Укажи двигатель:";
 
         Map<String, List<Car>> result = new HashMap<>();
-        tempObject.getData().getCars().forEach(
+        tempObject.getOption().getCarList().forEach(
                 car -> {
                     String engine = car.getEngine().getName();
                     if (result.containsKey(engine)) {
@@ -183,31 +187,31 @@ public class RegistrationAction implements Action {
                 }
         );
 
-        Map<String, String> data = getCarData(tempObject,result,6);
+        Map<String, String> data = getCarData(tempObject, result, 6);
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
     private List<SendMessage> seventhStep(Update update, TempObject tempObject) {
-        //Сохраняем пользователя
-        return Collections.emptyList();
+        if (tempObject.getOption().getCarList().size() != 1) {
+            return CommonMsgs.createCommonError(update);
+        }
+        confirmCarSelection(tempObject);
+        User user = RegistrationHelper.createUser(tempObject,update);
+       if (userStorage.saveUser(user)) {
+           String text = "Отлично, ты зарегистрирован!";
+           return createMessages(text, update);
+       } else {
+           return CommonMsgs.createCommonError(update);
+       }
     }
 
-    private List<SendMessage> eighthStep(Update update, TempObject tempObject) {
-        return Collections.emptyList();
-    }
-
-    private List<SendMessage> ninthStep(Update update, TempObject tempObject) {
-        return Collections.emptyList();
-    }
 
 
     private Map<String, String> getRegionData(List<Region> regions, TempObject tempObject) {
         Map<String, String> datas = new HashMap<>();
         for (Region region : regions) {
             TempObject newTemp = tempObject.clone();
-            Data data = new Data();
-            data.setRegion(region);
-            newTemp.setData(data);
+            newTemp.getOption().setRegion(region);
             newTemp.setStep(2);
             String key = getKeyAndSaveTemp(newTemp);
             datas.put(region.getName(), key);
@@ -220,8 +224,9 @@ public class RegistrationAction implements Action {
 
         for (Map.Entry<String, List<Car>> entry : result.entrySet()) {
             TempObject newTemp = tempObject.clone();
-            tempObject.getData().getCars().clear();
-            newTemp.getData().getCars().addAll(entry.getValue());
+            newTemp.getOption().getCarList().clear();
+            newTemp.getOption().getCarList().addAll(entry.getValue());
+            newTemp.getOption().setCarValue(entry.getKey());
             newTemp.setStep(step);
             String key = getKeyAndSaveTemp(newTemp);
             data.put(entry.getKey(), key);
@@ -241,5 +246,29 @@ public class RegistrationAction implements Action {
         sendMessage.setReplyMarkup(inlineKeyboardMarkup);
         sendMessage.setChatId(Util.getUserId(update));
         return Collections.singletonList(sendMessage);
+    }
+    private List<SendMessage> createMessages(String text, Update update) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setText(text);
+        sendMessage.setChatId(Util.getUserId(update));
+        return Collections.singletonList(sendMessage);
+    }
+
+    private void confirmCountrySelection(TempObject tempObject) {
+        if (tempObject.getSelectedData() == null) {
+            SelectedData selectedData = new SelectedData();
+            SelectedRegistrationData srd = new SelectedRegistrationData();
+            selectedData.setSelectedRegistrationData(srd);
+            tempObject.setSelectedData(selectedData);
+        }
+        tempObject.getSelectedData().getSelectedRegistrationData().setCountryCode(tempObject.getOption().getCountryCode());
+    }
+
+    private void confirmCarSelection(TempObject tempObject) {
+        tempObject.getSelectedData().getSelectedRegistrationData().setCars(tempObject.getOption().getCarList());
+    }
+
+    private void confirmRegionSelection(TempObject tempObject) {
+        tempObject.getSelectedData().getSelectedRegistrationData().setRegion(tempObject.getOption().getRegion());
     }
 }
