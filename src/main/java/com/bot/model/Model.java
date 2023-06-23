@@ -11,4 +11,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Model {
     private String name;
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

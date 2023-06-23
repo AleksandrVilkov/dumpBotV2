@@ -1,0 +1,137 @@
+package com.bot.processor.common;
+
+import com.bot.common.Util;
+import com.bot.model.Car;
+import com.bot.model.OptionData;
+import com.bot.model.TempObject;
+import com.bot.processor.ITempStorage;
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+
+import java.util.*;
+
+@Component
+public class CommonCar {
+    public static List<SendMessage> chooseEngine(Update update, TempObject tempObject, ITempStorage tempStorage, int step) {
+        String text = "Укажи двигатель:";
+
+        Map<String, List<Car>> result = new HashMap<>();
+        tempObject.getOption().getCarList().forEach(
+                car -> {
+                    String engine = car.getEngine().getName();
+                    if (result.containsKey(engine)) {
+                        result.get(engine).add(car);
+                    } else {
+                        List<Car> carEngine = new ArrayList<>();
+                        carEngine.add(car);
+                        result.put(engine, carEngine);
+                    }
+                }
+        );
+
+        Map<String, String> data = getCarData(tempObject, result, step,tempStorage);
+        return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
+    }
+    public static List<SendMessage> chooseModel(Update update, TempObject tempObject, ITempStorage tempStorage, int step) {
+        String text = "Теперь выбери модель:";
+
+        Map<String, List<Car>> result = new HashMap<>();
+        tempObject.getOption().getCarList().forEach(
+                car -> {
+                    String model = car.getModel().getName();
+                    if (result.containsKey(model)) {
+                        result.get(model).add(car);
+                    } else {
+                        List<Car> carModel = new ArrayList<>();
+                        carModel.add(car);
+                        result.put(model, carModel);
+                    }
+                }
+        );
+
+        Map<String, String> data = getCarData(tempObject, result, step, tempStorage);
+        return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
+    }
+
+    public static List<SendMessage> chooseBrand(Update update, TempObject tempObject, ITempStorage tempStorage, int step) {
+        String text = "Теперь выбери бренд:";
+
+        Map<String, List<Car>> result = new HashMap<>();
+        tempObject.getOption().getCarList().forEach(
+                car -> {
+                    String brand = car.getBrand().getName();
+                    if (result.containsKey(brand)) {
+                        result.get(brand).add(car);
+                    } else {
+                        List<Car> carBrands = new ArrayList<>();
+                        carBrands.add(car);
+                        result.put(brand, carBrands);
+                    }
+                }
+        );
+
+        Map<String, String> data = getCarData(tempObject, result, step, tempStorage);
+        return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
+    }
+
+    public static List<SendMessage> chooseConcern(Update update, TempObject tempObject, List<Car> cars, ITempStorage tempStorage, int step) {
+        String text = "Выбери концерн, к которому относится твой автомобиль:";
+        Map<String, List<Car>> carByConcern = new HashMap<>();
+        cars.forEach(
+                car -> {
+                    String concern = car.getConcern().getName();
+                    if (carByConcern.containsKey(concern)) {
+                        carByConcern.get(concern).add(car);
+                    } else {
+                        List<Car> carBrands = new ArrayList<>();
+                        carBrands.add(car);
+                        carByConcern.put(concern, carBrands);
+                    }
+                }
+        );
+
+        Map<String, String> data = getCarData(tempObject, carByConcern, step, tempStorage);
+        return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
+    }
+
+
+    private static List<SendMessage> createMessages(String text, Update update, InlineKeyboardMarkup inlineKeyboardMarkup) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setText(text);
+        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+        sendMessage.setChatId(Util.getUserId(update));
+        return Collections.singletonList(sendMessage);
+    }
+
+    private static Map<String, String> getCarData(TempObject tempObject,
+                                                  Map<String, List<Car>> result,
+                                                  int step, ITempStorage tempStorage) {
+        Map<String, String> data = new HashMap<>();
+
+        for (Map.Entry<String, List<Car>> entry : result.entrySet()) {
+            TempObject newTemp = tempObject.clone();
+            if (newTemp.getOption() != null) {
+                newTemp.getOption().getCarList().clear();
+                newTemp.getOption().getCarList().addAll(entry.getValue());
+                newTemp.getOption().setCarValue(entry.getKey());
+            } else {
+                OptionData optionData = new OptionData();
+                optionData.setCarList(entry.getValue());
+                optionData.setCarValue(entry.getKey());
+                newTemp.setOption(optionData);
+            }
+            newTemp.setStep(step);
+            String key = getKeyAndSaveTemp(newTemp, tempStorage);
+            data.put(entry.getKey(), key);
+        }
+        return data;
+    }
+
+    private static String getKeyAndSaveTemp(TempObject newTemp, ITempStorage tempStorage) {
+        String key = Util.generateToken(newTemp);
+        tempStorage.set(key, newTemp.toString());
+        return key;
+    }
+}

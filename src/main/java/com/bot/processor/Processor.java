@@ -4,7 +4,9 @@ import com.bot.bot.IProcessor;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.Action;
+import com.bot.model.Role;
 import com.bot.model.TempObject;
+import com.bot.model.User;
 import com.bot.processor.admin.AdminAction;
 import com.bot.processor.cabinet.CabinetAction;
 import com.bot.processor.registration.RegistrationAction;
@@ -42,38 +44,53 @@ public class Processor implements IProcessor {
 
     @Override
     public List<SendMessage> startProcessing(Update update) {
-
-        if (update.hasCallbackQuery()) {
-            return startProcessingCallback(update);
-        }
         String userId = Util.getUserId(update);
         boolean userCreated = userStorage.checkUser(userId);
 
+
+        if (update.hasCallbackQuery() || updateHasPhoto(update)) {
+            return startProcessingCallback(update);
+        }
+
         List<SendMessage> result = new ArrayList<>();
+        SendMessage msg = new SendMessage();
+        msg.setChatId(Util.getUserId(update));
         if (userCreated) {
-            //TODO показываем меню
+
+            User user = userStorage.getUser(userId);
+            if (user.isWaitingMessages()) {
+                return startProcessingCallback(update);
+            }
+
+            msg.setText("Выбери дейтсвие:");
+            Map<String, String> data = createMenuData(update, userStorage.getUser(userId));
+            msg.setReplyMarkup(Util.createKeyboardOneBtnLine(data));
         } else {
             //Если пользователя нет - предлогаем регистрацию
-            SendMessage msg = new SendMessage();
             msg.setChatId(Util.getUserId(update));
             msg.setText("К сожалению, ты не зарегистрирован. Нажми на кнопку регистрации");
             Map<String, String> data = new HashMap<>();
 
-            TempObject tempObject = TempObject.builder()
-                    .userId(Util.getUserId(update))
-                    .action(Action.REGISTRATION).build();
-            String key = Util.generateToken(tempObject);
-            tempStorage.set(key, tempObject.toString());
+            String key = getKeyAndSaveTemp(update, Action.REGISTRATION);
             data.put("Регистрация", key);
             msg.setReplyMarkup(Util.createKeyboardThreeBtn(data));
-            result.add(msg);
         }
+        result.add(msg);
         return result;
     }
 
     private List<SendMessage> startProcessingCallback(Update update) {
         //Мы ожидаем ключ. По этому ключу из редиса дергаем темп.
-        String key = update.getCallbackQuery().getData();
+        String key;
+        if (!update.hasCallbackQuery()) {
+            User user = userStorage.getUser(Util.getUserId(update));
+            key = user.getLastCallback();
+        } else {
+            key = update.getCallbackQuery().getData();
+        }
+        if (key == null) {
+            return CommonMsgs.createCommonError(update);
+        }
         String tempString = tempStorage.get(key);
 
         if (tempString != null && !tempString.isEmpty()) {
@@ -110,6 +127,34 @@ public class Processor implements IProcessor {
             log.error("tempObject is empty!");
             return CommonMsgs.createCommonError(update);
         }
+    }
+
+    private Map<String, String> createMenuData(Update update, User user) {
+        Map<String, String> menu = new HashMap<>();
+        menu.put("Личный кабинет", getKeyAndSaveTemp(update, Action.CABINET));
+        menu.put("Продать", getKeyAndSaveTemp(update, Action.SALE));
+        menu.put("Запрос на поиск", getKeyAndSaveTemp(update, Action.SEARCH));
+        if (user.getRole().equals(Role.ADMIN_ROLE)) {
+            menu.put("Cтатистика", getKeyAndSaveTemp(update, Action.STATISTICS));
+            menu.put("Запросы", getKeyAndSaveTemp(update, Action.ADMIN));
+        }
+        return menu;
+    }
+
+    private String getKeyAndSaveTemp(Update update, Action action) {
+        TempObject tempObject = TempObject.builder()
+                .userId(Util.getUserId(update))
+                .action(action).build();
+        String key = Util.generateToken(tempObject);
+        tempStorage.set(key, tempObject.toString());
+        return key;
+    }
+
+
+    private boolean updateHasPhoto(Update update) {
+        return update.hasMessage() &&
+                update.getMessage().getPhoto() != null &&
+                !update.getMessage().getPhoto().isEmpty();
     }
 }
 

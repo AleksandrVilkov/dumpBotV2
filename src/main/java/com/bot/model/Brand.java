@@ -11,4 +11,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Brand {
     private String name;
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

@@ -47,11 +47,12 @@ public class Bot extends TelegramLongPollingBot {
             msgs.addAll(result);
         } else {
             msgs.addAll(createValidationError(update));
+            deleteOldMessage(update);
             log.warn("user validate error");
         }
 
         deleteOldMessage(update);
-        sendMsgs(msgs);
+        sendMsgs(msgs, update);
     }
 
     private void deleteOldMessage(Update update) {
@@ -63,12 +64,13 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendMsgs(List<SendMessage> msgs) {
+    private void sendMsgs(List<SendMessage> msgs,Update update) {
         for (SendMessage sendMessage : msgs) {
             try {
                 execute(sendMessage);
             } catch (TelegramApiException e) {
                 log.error(e.getMessage());
+                deleteOldMessage(update);
                 throw new RuntimeException(e);
             }
         }

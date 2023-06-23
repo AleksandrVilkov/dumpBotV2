@@ -15,7 +15,7 @@ public class TempObject implements Cloneable {
     private SelectedData selectedData;
     private OptionData option;
     private Navigation navigation;
-
+    private String description;
     public TempObject() {
         this.selectedData = new SelectedData();
         this.option = new OptionData();

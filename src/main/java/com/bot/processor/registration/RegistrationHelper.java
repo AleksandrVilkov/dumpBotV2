@@ -20,8 +20,8 @@ public class RegistrationHelper {
                 .createDate(new Date())
                 .role(Role.USER_ROLE)
                 .login(Util.getUserId(update))
-                .regionId(tempObject.getSelectedData().getSelectedRegistrationData().getRegion().getId())
-                .carId(tempObject.getSelectedData().getSelectedRegistrationData().getCars().get(0).getId())
+                .regionId(tempObject.getSelectedData().getRegion().getId())
+                .carId(tempObject.getSelectedData().getCars().get(0).getId())
                 .waitingMessages(false)
                 .build();
     }

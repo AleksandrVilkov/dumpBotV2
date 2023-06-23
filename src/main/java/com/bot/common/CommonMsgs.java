@@ -8,6 +8,12 @@ import java.util.List;
 
 public class CommonMsgs {
     public static List<SendMessage> createCommonError(Update update) {
+        if (update.hasCallbackQuery()) {
+            return Collections.singletonList(
+                    new SendMessage(String.valueOf(update.getCallbackQuery().getFrom().getId()),
+                            "Упс, что то пошло не так..."));
+        }
+
         return Collections.singletonList(
                 new SendMessage(String.valueOf(update.getMessage().getFrom().getId()),
                         "Упс, что то пошло не так..."));
