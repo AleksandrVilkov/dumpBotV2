@@ -6,6 +6,7 @@ import com.bot.common.Util;
 import com.bot.model.*;
 import com.bot.processor.Action;
 import com.bot.processor.*;
+import com.bot.processor.common.CommonCar;
 import com.bot.processor.common.ProcessorUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,8 @@ public class AdminAction implements Action {
 
     @Override
     public MessageWrapper execute(Update update, TempObject tempObject) {
+
+        //TODO нужно отрефакторить
         switch (tempObject.getOperation()) {
             case START -> {
                 log.info("Start " + ACTION_NAME + " step for user " + Util.getUserId(update));
@@ -51,6 +54,9 @@ public class AdminAction implements Action {
             }
             case REJECTED_REQUEST -> {
                 return rejected(update, tempObject);
+            }
+            case SEND_REJECTED_REQUEST -> {
+                return sendRejected(update, tempObject);
             }
             case EDIT_REQUEST -> {
                 return edit(update, tempObject);
@@ -91,9 +97,20 @@ public class AdminAction implements Action {
     }
 
     private MessageWrapper rejected(Update update, TempObject tempObject) {
-        return null;
+        String text = "Укажи причину отклонения запроса. Обрати внимание, это сообщение получит автор.";
+        SendMessage sendMessage = new SendMessage(Util.getUserId(update), text);
+        User user = userStorage.getUser(Util.getUserId(update));
+        TempObject newTemp = tempObject.clone();
+        newTemp.setOperation(Operation.SEND_REJECTED_REQUEST);
+        user.setLastCallback(ProcessorUtil.getKeyAndSaveTemp(newTemp, tempStorage));
+        user.setWaitingMessages(true);
+        userStorage.saveUser(user);
+        return MessageWrapper.builder().sendMessage(Collections.singletonList(sendMessage)).build();
     }
 
+    private MessageWrapper sendRejected(Update update, TempObject tempObject) {
+        return null;
+    }
 
     private MessageWrapper starting(Update update, TempObject tempObject) {
         MessageWrapper wrapper = new MessageWrapper();
