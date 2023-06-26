@@ -60,19 +60,13 @@ public class RegionStorage implements IRegionStorage {
 
     @Override
     public List<Region> getRegionPage(int pageNumber, int count, boolean sorted) {
-        Pageable pageable;
-        if (sorted) {
-            pageable = PageRequest.of(pageNumber, count, Sort.by("name").descending());
-        } else {
-            pageable = PageRequest.of(pageNumber, count);
-        }
+        Pageable pageable = sorted
+                ? PageRequest.of(pageNumber, count, Sort.by("name").descending())
+                : PageRequest.of(pageNumber, count);
         Page<RegionEntity> searchResult = regionRepository.findAll(pageable);
-        List<RegionEntity> regionEntityList = searchResult.get().collect(Collectors.toList());
-        List<Region> result = new ArrayList<>();
-        regionEntityList.forEach(regionEntity -> {
-            result.add((Region) regionEntity.toModelObject());
-        });
-        return result;
+        return searchResult.get()
+                .map(regionEntity -> (Region) regionEntity.toModelObject())
+                .collect(Collectors.toList());
     }
 
     @Override

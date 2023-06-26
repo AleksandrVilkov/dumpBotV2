@@ -2,6 +2,7 @@ package com.bot.processor.common;
 
 import com.bot.common.Util;
 import com.bot.model.Car;
+import com.bot.model.Operation;
 import com.bot.model.OptionData;
 import com.bot.model.TempObject;
 import com.bot.processor.ITempStorage;
@@ -14,7 +15,7 @@ import java.util.*;
 
 @Component
 public class CommonCar {
-    public static List<SendMessage> chooseEngine(Update update, TempObject tempObject, ITempStorage tempStorage, int step) {
+    public static List<SendMessage> chooseEngine(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
         String text = "Укажи двигатель:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -34,7 +35,7 @@ public class CommonCar {
         Map<String, String> data = getCarData(tempObject, result, step,tempStorage);
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
-    public static List<SendMessage> chooseModel(Update update, TempObject tempObject, ITempStorage tempStorage, int step) {
+    public static List<SendMessage> chooseModel(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
         String text = "Теперь выбери модель:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -55,7 +56,7 @@ public class CommonCar {
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
-    public static List<SendMessage> chooseBrand(Update update, TempObject tempObject, ITempStorage tempStorage, int step) {
+    public static List<SendMessage> chooseBrand(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
         String text = "Теперь выбери бренд:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -76,7 +77,7 @@ public class CommonCar {
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
-    public static List<SendMessage> chooseConcern(Update update, TempObject tempObject, List<Car> cars, ITempStorage tempStorage, int step) {
+    public static List<SendMessage> chooseConcern(Update update, TempObject tempObject, List<Car> cars, ITempStorage tempStorage, Operation step) {
         String text = "Выбери концерн, к которому относится твой автомобиль:";
         Map<String, List<Car>> carByConcern = new HashMap<>();
         cars.forEach(
@@ -96,6 +97,12 @@ public class CommonCar {
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
+    public static List<String> getCarsId(List<Car> cars) {
+        List<String> ids = new ArrayList<>();
+        cars.forEach(car -> ids.add(String.valueOf(car.getId())));
+        return ids;
+    }
+
 
     private static List<SendMessage> createMessages(String text, Update update, InlineKeyboardMarkup inlineKeyboardMarkup) {
         SendMessage sendMessage = new SendMessage();
@@ -107,7 +114,7 @@ public class CommonCar {
 
     private static Map<String, String> getCarData(TempObject tempObject,
                                                   Map<String, List<Car>> result,
-                                                  int step, ITempStorage tempStorage) {
+                                                  Operation step, ITempStorage tempStorage) {
         Map<String, String> data = new HashMap<>();
 
         for (Map.Entry<String, List<Car>> entry : result.entrySet()) {
@@ -122,7 +129,7 @@ public class CommonCar {
                 optionData.setCarValue(entry.getKey());
                 newTemp.setOption(optionData);
             }
-            newTemp.setStep(step);
+            newTemp.setOperation(step);
             String key = getKeyAndSaveTemp(newTemp, tempStorage);
             data.put(entry.getKey(), key);
         }

@@ -20,7 +20,6 @@ public class AccommodationStorage implements IAccommodationStorage {
     @Autowired
     UserAccommodationRepository accommodationRepository;
 
-
     @Override
     public boolean saveAccommodation(UserAccommodation accommodation) {
         try {
@@ -57,6 +56,17 @@ public class AccommodationStorage implements IAccommodationStorage {
         }
         return result;
     }
+
+    @Override
+    public UserAccommodation getFirstNotAgreed() {
+        return (UserAccommodation) accommodationRepository.findFirstByTopical(true).toModelObject();
+    }
+
+    @Override
+    public int countNotAgreed() {
+        return accommodationRepository.countAllByTopical(true);
+    }
+
     private UserAccommodationEntity convertToEntity(UserAccommodation accommodation) {
         UserAccommodationEntity result = new UserAccommodationEntity();
         result.setId(accommodation.getId());
@@ -82,7 +92,7 @@ public class AccommodationStorage implements IAccommodationStorage {
 
         Set<CarAccommodationEntity> cae = new HashSet<>();
         if (accommodation.getCarsId() != null) {
-            for (String carId: accommodation.getCarsId()) {
+            for (String carId : accommodation.getCarsId()) {
                 CarAccommodationEntity carAccommodationEntity = new CarAccommodationEntity();
                 carAccommodationEntity.setUserAccommodationEntity(result);
                 carAccommodationEntity.setCarId(carId);

@@ -3,10 +3,8 @@ package com.bot.processor;
 import com.bot.bot.IProcessor;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
+import com.bot.model.*;
 import com.bot.model.Action;
-import com.bot.model.Role;
-import com.bot.model.TempObject;
-import com.bot.model.User;
 import com.bot.processor.admin.AdminAction;
 import com.bot.processor.cabinet.CabinetAction;
 import com.bot.processor.registration.RegistrationAction;
@@ -71,7 +69,7 @@ public class Processor implements IProcessor {
             msg.setText("К сожалению, ты не зарегистрирован. Нажми на кнопку регистрации");
             Map<String, String> data = new HashMap<>();
 
-            String key = getKeyAndSaveTemp(update, Action.REGISTRATION);
+            String key = getKeyAndSaveStartTemp(update, Action.REGISTRATION);
             data.put("Регистрация", key);
             msg.setReplyMarkup(Util.createKeyboardThreeBtn(data));
         }
@@ -131,19 +129,20 @@ public class Processor implements IProcessor {
 
     private Map<String, String> createMenuData(Update update, User user) {
         Map<String, String> menu = new HashMap<>();
-        menu.put("Личный кабинет", getKeyAndSaveTemp(update, Action.CABINET));
-        menu.put("Продать", getKeyAndSaveTemp(update, Action.SALE));
-        menu.put("Запрос на поиск", getKeyAndSaveTemp(update, Action.SEARCH));
+        menu.put("Личный кабинет", getKeyAndSaveStartTemp(update, Action.CABINET));
+        menu.put("Продать", getKeyAndSaveStartTemp(update, Action.SALE));
+        menu.put("Запрос на поиск", getKeyAndSaveStartTemp(update, Action.SEARCH));
         if (user.getRole().equals(Role.ADMIN_ROLE)) {
-            menu.put("Cтатистика", getKeyAndSaveTemp(update, Action.STATISTICS));
-            menu.put("Запросы", getKeyAndSaveTemp(update, Action.ADMIN));
+            menu.put("Cтатистика", getKeyAndSaveStartTemp(update, Action.STATISTICS));
+            menu.put("Запросы", getKeyAndSaveStartTemp(update, Action.ADMIN));
         }
         return menu;
     }
 
-    private String getKeyAndSaveTemp(Update update, Action action) {
+    private String getKeyAndSaveStartTemp(Update update, Action action) {
         TempObject tempObject = TempObject.builder()
                 .userId(Util.getUserId(update))
+                .operation(Operation.START)
                 .action(action).build();
         String key = Util.generateToken(tempObject);
         tempStorage.set(key, tempObject.toString());

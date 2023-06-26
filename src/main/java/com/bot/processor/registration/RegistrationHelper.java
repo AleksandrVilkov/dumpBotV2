@@ -40,7 +40,6 @@ public class RegistrationHelper {
 
     public static Map<String, String> backStepBtn(TempObject tempObject, int currentStep, ITempStorage tempStorage) {
         TempObject newTemp = tempObject.clone();
-        newTemp.setStep(currentStep - 1);
         String key = Util.generateToken(newTemp);
         tempStorage.set(key, newTemp.toString());
         return Collections.singletonMap("Шаг назад", key);

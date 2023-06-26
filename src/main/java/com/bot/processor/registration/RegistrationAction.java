@@ -32,43 +32,42 @@ public class RegistrationAction implements Action {
         final String ACTION_NAME = "REGISTRATION";
         //Определяем шаг
         //TODO переделаем на энам
-        switch (tempObject.getStep()) {
-            case 0 -> {
+        switch (tempObject.getOperation()) {
+            case START -> {
                 //Выбор страны
-                log.info("Start 0 " + ACTION_NAME + " step for user " + Util.getUserId(update));
+                log.info("Start " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return firstStep(update, tempObject);
             }
-            case 1 -> {
+            case CITY_SELECTION -> {
                 //Выбор города
-                log.info("Start 1 " + ACTION_NAME + " step for user " + Util.getUserId(update));
+                log.info("Start CITY_SELECTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return secondStep(update, tempObject);
             }
-            case 2 -> {
+            case CONCERN_SELECTION -> {
                 //Выбор концерна
-                log.info("Start 2 " + ACTION_NAME + " step for user " + Util.getUserId(update));
+                log.info("Start CONCERN_SELECTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return thirdStep(update, tempObject);
             }
-            case 3 -> {
+            case BRAND_SELECTION -> {
                 //выбор бренда
-                log.info("Start 3 " + ACTION_NAME + " step for user " + Util.getUserId(update));
+                log.info("Start BRAND_SELECTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return fourthStep(update, tempObject);
             }
-            case 4 -> {
+            case MODEL_SELECTION -> {
                 //выбор модели
-                log.info("Start 4 " + ACTION_NAME + " step for user " + Util.getUserId(update));
+                log.info("Start MODEL_SELECTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return fifthStep(update, tempObject);
             }
-            case 5 -> {
+            case ENGINE_SELECTION -> {
                 //выбор двигателя
-                log.info("Start 5 " + ACTION_NAME + " step for user " + Util.getUserId(update));
+                log.info("Start ENGINE_SELECTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return sixthStep(update, tempObject);
             }
-            case 6 -> {
+            case END -> {
                 //завершение
-                log.info("Start 6 " + ACTION_NAME + " step for user " + Util.getUserId(update));
+                log.info("Start END " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return seventhStep(update, tempObject);
             }
-            //выбор модели
             default -> {
                 log.error("Cannot find step number in " + ACTION_NAME + " for user " + Util.getUserId(update));
                 return CommonMsgs.createCommonError(update);
@@ -85,7 +84,7 @@ public class RegistrationAction implements Action {
             OptionData optionData = new OptionData();
             optionData.setCountryCode(c);
             newTemp.setOption(optionData);
-            newTemp.setStep(1);
+            newTemp.setOperation(Operation.CITY_SELECTION);
             String key = ProcessorUtil.getKeyAndSaveTemp(newTemp, tempStorage);
             datas.put(c, key);
         }
@@ -134,19 +133,19 @@ public class RegistrationAction implements Action {
                     }
                 }
         );
-        return CommonCar.chooseConcern(update, tempObject, cars, tempStorage, 3);
+        return CommonCar.chooseConcern(update, tempObject, cars, tempStorage, Operation.BRAND_SELECTION);
     }
 
     private List<SendMessage> fourthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseBrand(update, tempObject, tempStorage, 4);
+        return CommonCar.chooseBrand(update, tempObject, tempStorage, Operation.MODEL_SELECTION);
     }
 
     private List<SendMessage> fifthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseModel(update, tempObject, tempStorage, 5);
+        return CommonCar.chooseModel(update, tempObject, tempStorage, Operation.ENGINE_SELECTION);
     }
 
     private List<SendMessage> sixthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseEngine(update, tempObject, tempStorage, 6);
+        return CommonCar.chooseEngine(update, tempObject, tempStorage, Operation.END);
     }
 
     private List<SendMessage> seventhStep(Update update, TempObject tempObject) {
@@ -170,7 +169,7 @@ public class RegistrationAction implements Action {
         for (Region region : regions) {
             TempObject newTemp = tempObject.clone();
             newTemp.getOption().setRegion(region);
-            newTemp.setStep(2);
+            newTemp.setOperation(Operation.CONCERN_SELECTION);
             String key = ProcessorUtil.getKeyAndSaveTemp(newTemp, tempStorage);
             datas.put(region.getName(), key);
         }

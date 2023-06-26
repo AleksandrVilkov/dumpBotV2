@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface ICarStorage {
     List<Car> getCars();
+    Car getCarById(int id);
 }

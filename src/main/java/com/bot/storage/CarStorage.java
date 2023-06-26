@@ -14,6 +14,7 @@ import java.util.List;
 public class CarStorage implements ICarStorage {
     @Autowired
     CarRepository carRepository;
+
     @Override
     public List<Car> getCars() {
         List<CarEntity> carEntityList = carRepository.findAll();
@@ -22,5 +23,11 @@ public class CarStorage implements ICarStorage {
             result.add((Car) carEntity.toModelObject());
         });
         return result;
+    }
+
+    @Override
+    public Car getCarById(int id) {
+        CarEntity car = carRepository.findById(id).orElseGet(CarEntity::new);
+        return (Car) car.toModelObject();
     }
 }

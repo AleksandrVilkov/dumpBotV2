@@ -11,11 +11,13 @@ import lombok.*;
 public class TempObject implements Cloneable {
     private Action action;
     private String userId;
-    private int step;
+    private Operation operation;
     private SelectedData selectedData;
     private OptionData option;
     private Navigation navigation;
     private String description;
+    private AdministrationData administrationData;
+
     public TempObject() {
         this.selectedData = new SelectedData();
         this.option = new OptionData();
@@ -41,4 +43,5 @@ public class TempObject implements Cloneable {
             throw new AssertionError();
         }
     }
+
 }

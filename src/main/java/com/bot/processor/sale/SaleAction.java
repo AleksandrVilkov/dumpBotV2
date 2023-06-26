@@ -33,55 +33,54 @@ public class SaleAction implements Action {
     @Override
     public List<SendMessage> execute(Update update, TempObject tempObject) {
         final String ACTION_NAME = "SALE";
-        switch (tempObject.getStep()) {
-            case 0 -> {
-                log.info("Start 0 "+ACTION_NAME+" step for user " + Util.getUserId(update));
+        switch (tempObject.getOperation()) {
+            case START -> {
+                log.info("Start " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return firstStep(update, tempObject);
             }
-            case 1 -> {
-                log.info("Start 1 "+ACTION_NAME+" step for user " + Util.getUserId(update));
+            case CONCERN_SELECTION -> {
+                log.info("Start CONCERN_SELECTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return secondStep(update, tempObject);
             }
-            case 2 -> {
-                log.info("Start 2 "+ACTION_NAME+" step for user " + Util.getUserId(update));
+            case BRAND_SELECTION -> {
+                log.info("Start BRAND_SELECTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return thirdStep(update, tempObject);
             }
-            case 3 -> {
-                log.info("Start 3 "+ACTION_NAME+" step for user " + Util.getUserId(update));
+            case MODEL_SELECTION -> {
+                log.info("Start MODEL_SELECTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return fourthStep(update, tempObject);
             }
-            case 4 -> {
-                log.info("Start 4 "+ACTION_NAME+" step for user " + Util.getUserId(update));
+            case ENGINE_SELECTION -> {
+                log.info("Start ENGINE_SELECTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return fifthStep(update, tempObject);
             }
-            case 5 -> {
-                log.info("Start 5 "+ACTION_NAME+" step for user " + Util.getUserId(update));
+            case PRE_PHOTO -> {
+                log.info("Start PRE_PHOTO " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return sixthStep(update, tempObject);
             }
-            case 6 -> {
-                log.info("Start 6 "+ACTION_NAME+" step for user " + Util.getUserId(update));
+            case PHOTO -> {
+                log.info("Start PHOTO " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return seventhStep(update, tempObject);
             }
-            case 7 -> {
-                log.info("Start 7 "+ACTION_NAME+" step for user " + Util.getUserId(update));
+            case DESCRIPTION -> {
+                log.info("Start DESCRIPTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return eighthStep(update, tempObject);
             }
-            case 8 -> {
-                log.info("Start 7 "+ACTION_NAME+" step for user " + Util.getUserId(update));
+            case END -> {
+                log.info("Start END " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return ninthStep(update, tempObject);
             }
             default -> {
-                log.error("Cannot find step number in "+ACTION_NAME+" for user " + Util.getUserId(update));
+                log.error("Cannot find step number in " + ACTION_NAME + " for user " + Util.getUserId(update));
                 return CommonMsgs.createCommonError(update);
             }
         }
     }
 
     private List<SendMessage> firstStep(Update update, TempObject tempObject) {
-        int step = 1;
         String text = "Давай разместим с тобой объявление. Нужно будет указать машины, на которые подходит деталь, приложить фото, указать описание и цену. Нажми на кнопку начать:";
         TempObject newTemp = tempObject.clone();
-        newTemp.setStep(step);
+        newTemp.setOperation(Operation.CONCERN_SELECTION);
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(Util.getUserId(update));
         Map<String, String> data = new HashMap<>();
@@ -108,19 +107,19 @@ public class SaleAction implements Action {
                     }
                 }
         );
-        return CommonCar.chooseConcern(update, tempObject, cars, tempStorage, 2);
+        return CommonCar.chooseConcern(update, tempObject, cars, tempStorage, Operation.BRAND_SELECTION);
     }
 
     private List<SendMessage> thirdStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseBrand(update, tempObject, tempStorage, 3);
+        return CommonCar.chooseBrand(update, tempObject, tempStorage, Operation.MODEL_SELECTION);
     }
 
     private List<SendMessage> fourthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseModel(update, tempObject, tempStorage, 4);
+        return CommonCar.chooseModel(update, tempObject, tempStorage, Operation.ENGINE_SELECTION);
     }
 
     private List<SendMessage> fifthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseEngine(update, tempObject, tempStorage, 5);
+        return CommonCar.chooseEngine(update, tempObject, tempStorage, Operation.PRE_PHOTO);
     }
 
     private List<SendMessage> sixthStep(Update update, TempObject tempObject) {
@@ -134,10 +133,10 @@ public class SaleAction implements Action {
 
         Map<String, String> data = new HashMap<>();
         TempObject tempCarElse = tempObject.clone();
-        tempCarElse.setStep(1);
+        tempCarElse.setOperation(Operation.CONCERN_SELECTION);
 
         TempObject tempPhoto = tempObject.clone();
-        tempPhoto.setStep(6);
+        tempPhoto.setOperation(Operation.PHOTO);
         data.put("Добавить фото", ProcessorUtil.getKeyAndSaveTemp(tempPhoto, tempStorage));
         data.put("Добавить авто", ProcessorUtil.getKeyAndSaveTemp(tempCarElse, tempStorage));
         return ProcessorUtil.createMessages(text, update, Util.createKeyboardOneBtnLine(data));
@@ -164,7 +163,7 @@ public class SaleAction implements Action {
             String buttonName = "Готово";
             text = "Отлично. Если есть еще фото - дай их мне. Если нет - нажми кнопку " + buttonName;
             Map<String, String> data = new HashMap<>();
-            newTemp.setStep(7);
+            newTemp.setOperation(Operation.DESCRIPTION);
             data.put(buttonName, ProcessorUtil.getKeyAndSaveTemp(newTemp, tempStorage));
             return ProcessorUtil.createMessages(text, update, Util.createKeyboardOneBtnLine(data));
         } else {
@@ -180,7 +179,7 @@ public class SaleAction implements Action {
         String text = "Укажи описание к объявлению. Опиши товар, не забудь обязательно указать цену! Пиши так, что бы твой товар захотели купить!";
         User user = userStorage.getUser(Util.getUserId(update));
         TempObject newTemp = tempObject.clone();
-        newTemp.setStep(8);
+        newTemp.setOperation(Operation.END);
         user.setWaitingMessages(true);
         String key = ProcessorUtil.getKeyAndSaveTemp(newTemp, tempStorage);
         user.setLastCallback(key);
@@ -202,7 +201,7 @@ public class SaleAction implements Action {
                 .topical(true)
                 .description(description)
                 .photos(newTemp.getSelectedData().getPhotos())
-                .carsId(getCarsId(tempObject.getSelectedData().getCars()))
+                .carsId(CommonCar.getCarsId(tempObject.getSelectedData().getCars()))
                 .build();
 
         if (accommodationStorage.saveAccommodation(userAccommodation)) {
@@ -225,9 +224,5 @@ public class SaleAction implements Action {
         }
     }
 
-    private List<String> getCarsId(List<Car> cars) {
-        List<String> ids = new ArrayList<>();
-        cars.forEach(car -> ids.add(String.valueOf(car.getId())));
-        return ids;
-    }
+
 }

@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface UserAccommodationRepository extends CrudRepository<UserAccommodationEntity, Integer> {
     List<UserAccommodationEntity> findAllByTopical(boolean topical);
+    UserAccommodationEntity findFirstByTopical(boolean topical);
+    int countAllByTopical(boolean topical);
 }
