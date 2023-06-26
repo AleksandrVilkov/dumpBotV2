@@ -1,5 +1,6 @@
 package com.bot.processor.cabinet;
 
+import com.bot.model.MessageWrapper;
 import com.bot.model.TempObject;
 import com.bot.processor.Action;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,7 @@ import java.util.List;
 @Component
 public class CabinetAction implements Action {
     @Override
-    public List<SendMessage> execute(Update update, TempObject tempObject) {
+    public MessageWrapper execute(Update update, TempObject tempObject) {
         return null;
     }
 }

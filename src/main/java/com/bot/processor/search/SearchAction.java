@@ -31,7 +31,7 @@ public class SearchAction implements Action {
     IAccommodationStorage accommodationStorage;
 
     @Override
-    public List<SendMessage> execute(Update update, TempObject tempObject) {
+    public MessageWrapper execute(Update update, TempObject tempObject) {
         final String ACTION_NAME = "SEARCH";
         switch (tempObject.getOperation()) {
             case START -> {
@@ -81,7 +81,7 @@ public class SearchAction implements Action {
         }
     }
 
-    private List<SendMessage> firstStep(Update update, TempObject tempObject) {
+    private MessageWrapper firstStep(Update update, TempObject tempObject) {
         int step = 1;
         String text = "Давай разместим запрос на поиск. Нажми кнопку \"Начать\"";
         TempObject newTemp = tempObject.clone();
@@ -93,7 +93,7 @@ public class SearchAction implements Action {
         return ProcessorUtil.createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
-    private List<SendMessage> secondStep(Update update, TempObject tempObject) {
+    private MessageWrapper secondStep(Update update, TempObject tempObject) {
         String text = "Хочешь указать пренадлежность детали к автомобилю? Если указать - то большее количество пользователей получат уведомление, и шанс найти то что ты ищешь - возрастает.";
 
         TempObject newTemp = tempObject.clone();
@@ -109,7 +109,7 @@ public class SearchAction implements Action {
         return ProcessorUtil.createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
-    private List<SendMessage> thirdStep(Update update, TempObject tempObject) {
+    private MessageWrapper thirdStep(Update update, TempObject tempObject) {
         List<Car> cars = carStorage.getCars();
         if (tempObject.getSelectedData() == null) {
             SelectedData selectedData = new SelectedData();
@@ -131,19 +131,19 @@ public class SearchAction implements Action {
         return CommonCar.chooseConcern(update, tempObject, cars, tempStorage, Operation.BRAND_SELECTION);
     }
 
-    private List<SendMessage> fourthStep(Update update, TempObject tempObject) {
+    private MessageWrapper fourthStep(Update update, TempObject tempObject) {
         return CommonCar.chooseBrand(update, tempObject, tempStorage, Operation.MODEL_SELECTION);
     }
 
-    private List<SendMessage> fifthStep(Update update, TempObject tempObject) {
+    private MessageWrapper fifthStep(Update update, TempObject tempObject) {
         return CommonCar.chooseModel(update, tempObject, tempStorage, Operation.ENGINE_SELECTION);
     }
 
-    private List<SendMessage> sixthStep(Update update, TempObject tempObject) {
+    private MessageWrapper sixthStep(Update update, TempObject tempObject) {
         return CommonCar.chooseEngine(update, tempObject, tempStorage, Operation.PRE_PHOTO);
     }
 
-    private List<SendMessage> seventhStep(Update update, TempObject tempObject) {
+    private MessageWrapper seventhStep(Update update, TempObject tempObject) {
         //TODO тут может быть не выбраны автомобили. Нужно предусмотреть.
 
         Map<String, String> data = new HashMap<>();
@@ -169,7 +169,7 @@ public class SearchAction implements Action {
         return ProcessorUtil.createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
-    private List<SendMessage> eighthStep(Update update, TempObject tempObject) {
+    private MessageWrapper eighthStep(Update update, TempObject tempObject) {
         User user = userStorage.getUser(Util.getUserId(update));
         String text;
         TempObject newTemp = tempObject.clone();
@@ -202,7 +202,7 @@ public class SearchAction implements Action {
         return ProcessorUtil.createMessages(text, update);
     }
 
-    private List<SendMessage> ninthStep(Update update, TempObject tempObject) {
+    private MessageWrapper ninthStep(Update update, TempObject tempObject) {
         String text = "Укажи описание к объявлению. Опиши то, что ты ищешь:";
         User user = userStorage.getUser(Util.getUserId(update));
         TempObject newTemp = tempObject.clone();
@@ -214,7 +214,7 @@ public class SearchAction implements Action {
         return ProcessorUtil.createMessages(text, update);
     }
 
-    private List<SendMessage> tenthStep(Update update, TempObject tempObject) {
+    private MessageWrapper tenthStep(Update update, TempObject tempObject) {
         TempObject newTemp = tempObject.clone();
         String description = update.getMessage().getText();
         User user = userStorage.getUser(Util.getUserId(update));
@@ -246,7 +246,7 @@ public class SearchAction implements Action {
             user.setWaitingMessages(false);
             user.setLastCallback(null);
             userStorage.saveUser(user);
-            return result;
+            return MessageWrapper.builder().sendMessage(result).build();
         } else {
             log.error("error saving user accommodation for user " + Util.getUserId(update));
             return CommonMsgs.createCommonError(update);

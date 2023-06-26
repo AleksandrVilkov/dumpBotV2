@@ -59,7 +59,11 @@ public class AccommodationStorage implements IAccommodationStorage {
 
     @Override
     public UserAccommodation getFirstNotAgreed() {
-        return (UserAccommodation) accommodationRepository.findFirstByTopical(true).toModelObject();
+        UserAccommodationEntity userAccommodation = accommodationRepository.findFirstByTopical(true);
+        if (userAccommodation == null) {
+            return new UserAccommodation();
+        }
+        return (UserAccommodation) userAccommodation.toModelObject();
     }
 
     @Override

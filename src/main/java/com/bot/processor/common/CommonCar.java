@@ -1,10 +1,7 @@
 package com.bot.processor.common;
 
 import com.bot.common.Util;
-import com.bot.model.Car;
-import com.bot.model.Operation;
-import com.bot.model.OptionData;
-import com.bot.model.TempObject;
+import com.bot.model.*;
 import com.bot.processor.ITempStorage;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -15,7 +12,7 @@ import java.util.*;
 
 @Component
 public class CommonCar {
-    public static List<SendMessage> chooseEngine(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
+    public static MessageWrapper chooseEngine(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
         String text = "Укажи двигатель:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -35,7 +32,7 @@ public class CommonCar {
         Map<String, String> data = getCarData(tempObject, result, step,tempStorage);
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
-    public static List<SendMessage> chooseModel(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
+    public static MessageWrapper chooseModel(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
         String text = "Теперь выбери модель:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -56,7 +53,7 @@ public class CommonCar {
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
-    public static List<SendMessage> chooseBrand(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
+    public static MessageWrapper chooseBrand(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
         String text = "Теперь выбери бренд:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -77,7 +74,7 @@ public class CommonCar {
         return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
-    public static List<SendMessage> chooseConcern(Update update, TempObject tempObject, List<Car> cars, ITempStorage tempStorage, Operation step) {
+    public static MessageWrapper chooseConcern(Update update, TempObject tempObject, List<Car> cars, ITempStorage tempStorage, Operation step) {
         String text = "Выбери концерн, к которому относится твой автомобиль:";
         Map<String, List<Car>> carByConcern = new HashMap<>();
         cars.forEach(
@@ -104,12 +101,12 @@ public class CommonCar {
     }
 
 
-    private static List<SendMessage> createMessages(String text, Update update, InlineKeyboardMarkup inlineKeyboardMarkup) {
+    private static MessageWrapper createMessages(String text, Update update, InlineKeyboardMarkup inlineKeyboardMarkup) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setText(text);
         sendMessage.setReplyMarkup(inlineKeyboardMarkup);
         sendMessage.setChatId(Util.getUserId(update));
-        return Collections.singletonList(sendMessage);
+        return MessageWrapper.builder().sendMessage(Collections.singletonList(sendMessage)).build();
     }
 
     private static Map<String, String> getCarData(TempObject tempObject,

@@ -3,8 +3,8 @@ package com.bot.processor;
 import com.bot.bot.IProcessor;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
-import com.bot.model.*;
 import com.bot.model.Action;
+import com.bot.model.*;
 import com.bot.processor.admin.AdminAction;
 import com.bot.processor.cabinet.CabinetAction;
 import com.bot.processor.registration.RegistrationAction;
@@ -17,9 +17,8 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Component
@@ -41,43 +40,49 @@ public class Processor implements IProcessor {
     AdminAction adminAction;
 
     @Override
-    public List<SendMessage> startProcessing(Update update) {
+    public MessageWrapper startProcessing(Update update) {
         String userId = Util.getUserId(update);
         boolean userCreated = userStorage.checkUser(userId);
 
+        MessageWrapper result;
 
         if (update.hasCallbackQuery() || updateHasPhoto(update)) {
             return startProcessingCallback(update);
         }
-
-        List<SendMessage> result = new ArrayList<>();
         SendMessage msg = new SendMessage();
-        msg.setChatId(Util.getUserId(update));
+        msg.setChatId(userId);
         if (userCreated) {
-
             User user = userStorage.getUser(userId);
             if (user.isWaitingMessages()) {
-                return startProcessingCallback(update);
+                result = startProcessingCallback(update);
+            } else {
+                msg.setText("Выбери дейтсвие:");
+                Map<String, String> data = createMenuData(update, userStorage.getUser(userId));
+                msg.setReplyMarkup(Util.createKeyboardOneBtnLine(data));
+                result = MessageWrapper.builder().sendMessage(Collections.singletonList(msg)).build();
             }
+            return result;
 
-            msg.setText("Выбери дейтсвие:");
-            Map<String, String> data = createMenuData(update, userStorage.getUser(userId));
-            msg.setReplyMarkup(Util.createKeyboardOneBtnLine(data));
         } else {
             //Если пользователя нет - предлогаем регистрацию
-            msg.setChatId(Util.getUserId(update));
+            msg.setChatId(userId);
             msg.setText("К сожалению, ты не зарегистрирован. Нажми на кнопку регистрации");
             Map<String, String> data = new HashMap<>();
-
             String key = getKeyAndSaveStartTemp(update, Action.REGISTRATION);
             data.put("Регистрация", key);
             msg.setReplyMarkup(Util.createKeyboardThreeBtn(data));
+            result = MessageWrapper.builder().sendMessage(Collections.singletonList(msg)).build();
+            return result;
         }
-        result.add(msg);
-        return result;
     }
 
-    private List<SendMessage> startProcessingCallback(Update update) {
+
+
+
+
+
+
+    private MessageWrapper startProcessingCallback(Update update) {
         //Мы ожидаем ключ. По этому ключу из редиса дергаем темп.
         String key;
         if (!update.hasCallbackQuery()) {

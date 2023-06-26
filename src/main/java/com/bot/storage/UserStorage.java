@@ -37,8 +37,8 @@ public class UserStorage implements IUserStorage {
     }
 
     @Override
-    public User getUser(String id) {
-        List<ClientEntity> c = clientRepository.findByLogin(id);
+    public User getUser(String login) {
+        List<ClientEntity> c = clientRepository.findByLogin(login);
         ClientEntity clientEntity = c.get(0);
         return (User) clientEntity.toModelObject();
     }

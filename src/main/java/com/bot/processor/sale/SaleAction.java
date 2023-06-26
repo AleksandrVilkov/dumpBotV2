@@ -31,7 +31,7 @@ public class SaleAction implements Action {
     IAccommodationStorage accommodationStorage;
 
     @Override
-    public List<SendMessage> execute(Update update, TempObject tempObject) {
+    public MessageWrapper execute(Update update, TempObject tempObject) {
         final String ACTION_NAME = "SALE";
         switch (tempObject.getOperation()) {
             case START -> {
@@ -77,7 +77,7 @@ public class SaleAction implements Action {
         }
     }
 
-    private List<SendMessage> firstStep(Update update, TempObject tempObject) {
+    private MessageWrapper firstStep(Update update, TempObject tempObject) {
         String text = "Давай разместим с тобой объявление. Нужно будет указать машины, на которые подходит деталь, приложить фото, указать описание и цену. Нажми на кнопку начать:";
         TempObject newTemp = tempObject.clone();
         newTemp.setOperation(Operation.CONCERN_SELECTION);
@@ -88,7 +88,7 @@ public class SaleAction implements Action {
         return ProcessorUtil.createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
-    private List<SendMessage> secondStep(Update update, TempObject tempObject) {
+    private MessageWrapper secondStep(Update update, TempObject tempObject) {
         List<Car> cars = carStorage.getCars();
         if (tempObject.getSelectedData() == null) {
             SelectedData selectedData = new SelectedData();
@@ -110,19 +110,19 @@ public class SaleAction implements Action {
         return CommonCar.chooseConcern(update, tempObject, cars, tempStorage, Operation.BRAND_SELECTION);
     }
 
-    private List<SendMessage> thirdStep(Update update, TempObject tempObject) {
+    private MessageWrapper  thirdStep(Update update, TempObject tempObject) {
         return CommonCar.chooseBrand(update, tempObject, tempStorage, Operation.MODEL_SELECTION);
     }
 
-    private List<SendMessage> fourthStep(Update update, TempObject tempObject) {
+    private MessageWrapper fourthStep(Update update, TempObject tempObject) {
         return CommonCar.chooseModel(update, tempObject, tempStorage, Operation.ENGINE_SELECTION);
     }
 
-    private List<SendMessage> fifthStep(Update update, TempObject tempObject) {
+    private MessageWrapper fifthStep(Update update, TempObject tempObject) {
         return CommonCar.chooseEngine(update, tempObject, tempStorage, Operation.PRE_PHOTO);
     }
 
-    private List<SendMessage> sixthStep(Update update, TempObject tempObject) {
+    private MessageWrapper sixthStep(Update update, TempObject tempObject) {
         if (tempObject.getOption().getCarList().size() != 1) {
             log.error("CarList size > 1!");
             return CommonMsgs.createCommonError(update);
@@ -142,7 +142,7 @@ public class SaleAction implements Action {
         return ProcessorUtil.createMessages(text, update, Util.createKeyboardOneBtnLine(data));
     }
 
-    private List<SendMessage> seventhStep(Update update, TempObject tempObject) {
+    private MessageWrapper seventhStep(Update update, TempObject tempObject) {
         User user = userStorage.getUser(Util.getUserId(update));
         String text;
         TempObject newTemp = tempObject.clone();
@@ -175,7 +175,7 @@ public class SaleAction implements Action {
         return ProcessorUtil.createMessages(text, update);
     }
 
-    private List<SendMessage> eighthStep(Update update, TempObject tempObject) {
+    private MessageWrapper eighthStep(Update update, TempObject tempObject) {
         String text = "Укажи описание к объявлению. Опиши товар, не забудь обязательно указать цену! Пиши так, что бы твой товар захотели купить!";
         User user = userStorage.getUser(Util.getUserId(update));
         TempObject newTemp = tempObject.clone();
@@ -187,7 +187,7 @@ public class SaleAction implements Action {
         return ProcessorUtil.createMessages(text, update);
     }
 
-    private List<SendMessage> ninthStep(Update update, TempObject tempObject) {
+    private MessageWrapper ninthStep(Update update, TempObject tempObject) {
         TempObject newTemp = tempObject.clone();
         String description = update.getMessage().getText();
         User user = userStorage.getUser(Util.getUserId(update));
@@ -217,7 +217,7 @@ public class SaleAction implements Action {
             user.setWaitingMessages(false);
             user.setLastCallback(null);
             userStorage.saveUser(user);
-            return result;
+            return MessageWrapper.builder().sendMessage(result).build();
         } else {
             log.error("error saving user accommodation for user " + Util.getUserId(update));
             return CommonMsgs.createCommonError(update);

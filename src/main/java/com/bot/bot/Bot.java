@@ -1,6 +1,7 @@
 package com.bot.bot;
 
 import com.bot.common.Util;
+import com.bot.model.MessageWrapper;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,9 +14,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 @Component
 @Getter
@@ -40,13 +39,12 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        List<SendMessage> msgs = new ArrayList<>();
+        MessageWrapper msgs;
 
         if (Validator.validateUser(update, this, config)) {
-            List<SendMessage> result = processor.startProcessing(update);
-            msgs.addAll(result);
+            msgs = processor.startProcessing(update);
         } else {
-            msgs.addAll(createValidationError(update));
+            msgs = createValidationError(update);
             deleteOldMessage(update);
             log.warn("user validate error");
         }
@@ -64,22 +62,32 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendMsgs(List<SendMessage> msgs,Update update) {
-        for (SendMessage sendMessage : msgs) {
-            try {
-                execute(sendMessage);
-            } catch (TelegramApiException e) {
-                log.error(e.getMessage());
-                deleteOldMessage(update);
-                throw new RuntimeException(e);
+    private void sendMsgs(MessageWrapper msgs, Update update) {
+        try {
+            if (msgs.getSendMediaGroup() != null) {
+                execute(msgs.getSendMediaGroup());
             }
+            if (msgs.getSendPhoto() != null) {
+                execute(msgs.getSendPhoto());
+            }
+            if (msgs.getSendMessage() != null && !msgs.getSendMessage().isEmpty()) {
+                for (SendMessage sendMessage : msgs.getSendMessage()) {
+                    execute(sendMessage);
+                }
+            }
+
+        } catch (TelegramApiException e) {
+            log.error(e.getMessage());
+            deleteOldMessage(update);
+            throw new RuntimeException(e);
         }
     }
 
-    private List<SendMessage> createValidationError(Update update) {
-        return Collections.singletonList(
+
+    private MessageWrapper createValidationError(Update update) {
+        return MessageWrapper.builder().sendMessage(Collections.singletonList(
                 new SendMessage(String.valueOf(update.getMessage().getFrom().getId()),
-                        "Ты не подписан на канал!"));
+                        "Ты не подписан на канал!"))).build();
     }
 
 }

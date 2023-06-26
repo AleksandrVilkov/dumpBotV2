@@ -28,7 +28,7 @@ public class RegistrationAction implements Action {
     IUserStorage userStorage;
 
     @Override
-    public List<SendMessage> execute(Update update, TempObject tempObject) {
+    public MessageWrapper execute(Update update, TempObject tempObject) {
         final String ACTION_NAME = "REGISTRATION";
         //Определяем шаг
         //TODO переделаем на энам
@@ -75,7 +75,7 @@ public class RegistrationAction implements Action {
         }
     }
 
-    private List<SendMessage> firstStep(Update update, TempObject tempObject) {
+    private MessageWrapper firstStep(Update update, TempObject tempObject) {
         String text = "Выбери страну:";
         List<String> countries = regionStorage.getCountries();
         Map<String, String> datas = new HashMap<>();
@@ -91,7 +91,7 @@ public class RegistrationAction implements Action {
         return ProcessorUtil.createMessages(text, update, Util.createKeyboardOneBtnLine(datas));
     }
 
-    private List<SendMessage> secondStep(Update update, TempObject tempObject) {
+    private MessageWrapper secondStep(Update update, TempObject tempObject) {
         String text = "Выбери город:";
         confirmCountrySelection(tempObject); //Запоминаем выбо страны
         String countryCode = tempObject.getSelectedData().getCountryCode();
@@ -117,7 +117,7 @@ public class RegistrationAction implements Action {
         return ProcessorUtil.createMessages(text, update, Util.createKeyboardWithNavi(datas, navi));
     }
 
-    private List<SendMessage> thirdStep(Update update, TempObject tempObject) {
+    private MessageWrapper thirdStep(Update update, TempObject tempObject) {
         confirmRegionSelection(tempObject);
         List<Car> cars = carStorage.getCars();
         Map<String, List<Car>> carByConcern = new HashMap<>();
@@ -136,19 +136,19 @@ public class RegistrationAction implements Action {
         return CommonCar.chooseConcern(update, tempObject, cars, tempStorage, Operation.BRAND_SELECTION);
     }
 
-    private List<SendMessage> fourthStep(Update update, TempObject tempObject) {
+    private MessageWrapper fourthStep(Update update, TempObject tempObject) {
         return CommonCar.chooseBrand(update, tempObject, tempStorage, Operation.MODEL_SELECTION);
     }
 
-    private List<SendMessage> fifthStep(Update update, TempObject tempObject) {
+    private MessageWrapper fifthStep(Update update, TempObject tempObject) {
         return CommonCar.chooseModel(update, tempObject, tempStorage, Operation.ENGINE_SELECTION);
     }
 
-    private List<SendMessage> sixthStep(Update update, TempObject tempObject) {
+    private MessageWrapper sixthStep(Update update, TempObject tempObject) {
         return CommonCar.chooseEngine(update, tempObject, tempStorage, Operation.END);
     }
 
-    private List<SendMessage> seventhStep(Update update, TempObject tempObject) {
+    private MessageWrapper seventhStep(Update update, TempObject tempObject) {
         if (tempObject.getOption().getCarList().size() != 1) {
             return CommonMsgs.createCommonError(update);
         }

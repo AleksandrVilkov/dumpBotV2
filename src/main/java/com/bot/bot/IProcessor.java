@@ -1,11 +1,8 @@
 package com.bot.bot;
 
-import com.bot.model.TempObject;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import com.bot.model.MessageWrapper;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.List;
-
 public interface IProcessor {
-    List<SendMessage> startProcessing(Update update);
+    MessageWrapper startProcessing(Update update);
 }

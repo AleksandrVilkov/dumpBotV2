@@ -18,14 +18,4 @@ public class BotConfig {
     @Autowired
     private ValidateData validateData;
 }
-@Getter
-@Setter
-@NoArgsConstructor
-@Component
-class ValidateData {
-    @Value("${bot.validateData.channelID}")
-    private long channelID;
-    @Value("${bot.validateData.channelURL}")
-    private String channelURL;
-}
 
