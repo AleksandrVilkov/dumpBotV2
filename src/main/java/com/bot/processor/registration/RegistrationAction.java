@@ -4,16 +4,20 @@ import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
 import com.bot.processor.Action;
-import com.bot.processor.*;
+import com.bot.processor.ICarStorage;
+import com.bot.processor.IRegionStorage;
+import com.bot.processor.IUserStorage;
 import com.bot.processor.common.CommonCar;
 import com.bot.processor.common.ProcessorUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -22,8 +26,6 @@ public class RegistrationAction implements Action {
     IRegionStorage regionStorage;
     @Autowired
     ICarStorage carStorage;
-    @Autowired
-    ITempStorage tempStorage;
     @Autowired
     IUserStorage userStorage;
 
@@ -78,17 +80,18 @@ public class RegistrationAction implements Action {
     private MessageWrapper firstStep(Update update, TempObject tempObject) {
         String text = "Выбери страну:";
         List<String> countries = regionStorage.getCountries();
-        Map<String, String> datas = new HashMap<>();
+        List<ButtonWrapper> buttons = new ArrayList<>();
         for (String c : countries) {
             TempObject newTemp = tempObject.clone();
             OptionData optionData = new OptionData();
             optionData.setCountryCode(c);
             newTemp.setOption(optionData);
             newTemp.setOperation(Operation.CITY_SELECTION);
-            String key = ProcessorUtil.getKeyAndSaveTemp(newTemp, tempStorage);
-            datas.put(c, key);
+            buttons.add(new ButtonWrapper(c, Util.generateToken(newTemp), newTemp));
         }
-        return ProcessorUtil.createMessages(text, update, Util.createKeyboardOneBtnLine(datas));
+        MessageWrapper messageWrapper = ProcessorUtil.createMessages(text, update, buttons);
+        messageWrapper.setButtons(buttons);
+        return messageWrapper;
     }
 
     private MessageWrapper secondStep(Update update, TempObject tempObject) {
@@ -106,15 +109,16 @@ public class RegistrationAction implements Action {
 
         List<Region> regions = regionStorage.getRegionPageByCountryCode(countryCode, nextPage == 0 ? 0 : nextPage - 1, countRegionsOnPage, true);
 
-        Map<String, String> navi = new LinkedHashMap<>();
-        Map<String, String> datas = getRegionData(regions, tempObject);
+        List<ButtonWrapper> buttons = getRegionButtons(regions, tempObject);
         if (currentPage != 0) {
-            navi.putAll(RegistrationHelper.createBackBntData(tempObject, nextPage, tempStorage));
+            buttons.add(RegistrationHelper.createBackBntData(tempObject, nextPage));
         }
         if ((currentPage + 1) * countRegionsOnPage < commonRegionCount || (navigation != null && navigation.isBack())) {
-            navi.putAll(RegistrationHelper.createNextBntData(tempObject, nextPage, tempStorage));
+            buttons.add(RegistrationHelper.createNextBntData(tempObject, nextPage));
         }
-        return ProcessorUtil.createMessages(text, update, Util.createKeyboardWithNavi(datas, navi));
+
+
+        return ProcessorUtil.createMessages(text, update, buttons);
     }
 
     private MessageWrapper thirdStep(Update update, TempObject tempObject) {
@@ -133,19 +137,19 @@ public class RegistrationAction implements Action {
                     }
                 }
         );
-        return CommonCar.chooseConcern(update, tempObject, cars, tempStorage, Operation.BRAND_SELECTION);
+        return CommonCar.chooseConcern(update, tempObject, cars, Operation.BRAND_SELECTION);
     }
 
     private MessageWrapper fourthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseBrand(update, tempObject, tempStorage, Operation.MODEL_SELECTION);
+        return CommonCar.chooseBrand(update, tempObject, Operation.MODEL_SELECTION);
     }
 
     private MessageWrapper fifthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseModel(update, tempObject, tempStorage, Operation.ENGINE_SELECTION);
+        return CommonCar.chooseModel(update, tempObject, Operation.ENGINE_SELECTION);
     }
 
     private MessageWrapper sixthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseEngine(update, tempObject, tempStorage, Operation.END);
+        return CommonCar.chooseEngine(update, tempObject, Operation.END);
     }
 
     private MessageWrapper seventhStep(Update update, TempObject tempObject) {
@@ -164,16 +168,16 @@ public class RegistrationAction implements Action {
     }
 
 
-    private Map<String, String> getRegionData(List<Region> regions, TempObject tempObject) {
-        Map<String, String> datas = new HashMap<>();
+    private List<ButtonWrapper> getRegionButtons(List<Region> regions, TempObject tempObject) {
+        List<ButtonWrapper> res = new ArrayList<>();
         for (Region region : regions) {
             TempObject newTemp = tempObject.clone();
             newTemp.getOption().setRegion(region);
             newTemp.setOperation(Operation.CONCERN_SELECTION);
-            String key = ProcessorUtil.getKeyAndSaveTemp(newTemp, tempStorage);
-            datas.put(region.getName(), key);
+            String key = Util.generateToken(newTemp);
+            res.add(new ButtonWrapper(region.getName(), key, newTemp));
         }
-        return datas;
+        return res;
     }
 
 

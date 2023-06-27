@@ -6,7 +6,6 @@ import com.bot.common.Util;
 import com.bot.model.*;
 import com.bot.processor.Action;
 import com.bot.processor.*;
-import com.bot.processor.common.CommonCar;
 import com.bot.processor.common.ProcessorUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +35,6 @@ public class AdminAction implements Action {
     @Autowired
     IUserStorage userStorage;
 
-    @Autowired
-    ITempStorage tempStorage;
-
     @Override
     public MessageWrapper execute(Update update, TempObject tempObject) {
 
@@ -61,11 +57,24 @@ public class AdminAction implements Action {
             case EDIT_REQUEST -> {
                 return edit(update, tempObject);
             }
+            case EDIT_DESCRIPTION -> {
+                return editDescription(update, tempObject);
+            }
             default -> {
                 log.error("Cannot find step number in " + ACTION_NAME + " for user " + Util.getUserId(update));
                 return CommonMsgs.createCommonError(update);
             }
         }
+    }
+
+    private MessageWrapper editDescription(Update update, TempObject tempObject) {
+        User user = userStorage.getUser(Util.getUserId(update));
+        user.setWaitingMessages(true);
+        tempObject.setOperation(Operation.ENTER_NEW_DESCRIPTION);
+        MessageWrapper messageWrapper = new MessageWrapper();
+        SendMessage sendMessage = new SendMessage(Util.getUserId(update), "Измените текст:");
+        //TODO
+        return messageWrapper;
     }
 
     private MessageWrapper approved(Update update, TempObject tempObject) {
@@ -92,8 +101,22 @@ public class AdminAction implements Action {
 
     }
 
+    private void rejectedAccommodation(UserAccommodation userAccommodation) {
+        userAccommodation.setRejected(true);
+        userAccommodation.setTopical(false);
+        userAccommodation.setCreatedDate(new Date());
+        accommodationStorage.saveAccommodation(userAccommodation);
+        log.info("user accommodation " + userAccommodation.getId() + " will be rejected and updated");
+
+    }
+
     private MessageWrapper edit(Update update, TempObject tempObject) {
-        return null;
+        String text = "Изменить описание";
+        TempObject newTemp = tempObject.clone();
+        newTemp.setOperation(Operation.EDIT_DESCRIPTION);
+        ButtonWrapper buttonWrapper = new ButtonWrapper(text, Util.generateToken(newTemp), tempObject);
+        SendMessage sendMessage = new SendMessage(Util.getUserId(update), "Выбери, что именно изменить:");
+        return MessageWrapper.builder().buttons(Collections.singletonList(buttonWrapper)).sendMessage(Collections.singletonList(sendMessage)).build();
     }
 
     private MessageWrapper rejected(Update update, TempObject tempObject) {
@@ -102,14 +125,30 @@ public class AdminAction implements Action {
         User user = userStorage.getUser(Util.getUserId(update));
         TempObject newTemp = tempObject.clone();
         newTemp.setOperation(Operation.SEND_REJECTED_REQUEST);
-        user.setLastCallback(ProcessorUtil.getKeyAndSaveTemp(newTemp, tempStorage));
+        String key = Util.generateToken(newTemp);
+        user.setLastCallback(key);
         user.setWaitingMessages(true);
         userStorage.saveUser(user);
-        return MessageWrapper.builder().sendMessage(Collections.singletonList(sendMessage)).build();
+        MessageWrapper messageWrapper = MessageWrapper.builder().sendMessage(Collections.singletonList(sendMessage)).build();
+        messageWrapper.addTemp(key, newTemp);
+        return messageWrapper;
     }
 
     private MessageWrapper sendRejected(Update update, TempObject tempObject) {
-        return null;
+        String rejectedText = update.getMessage().getText();
+        UserAccommodation accommodation = tempObject.getAdministrationData().getUserAccommodation();
+        String userNotification = "Привет! твой запрос \"" + accommodation.getDescription() + "\"" + " отклонен. \n" +
+                "Комментарий администратора: \n" + rejectedText;
+        String adminNotification = "Запрос помечен как отклоненный. Пользователю отправлено уведомление с текекстом: \n" + userNotification;
+        rejectedAccommodation(accommodation);
+        List<SendMessage> msgs = new ArrayList<>();
+        msgs.add(new SendMessage(accommodation.getClientLogin(), userNotification));
+        msgs.add(new SendMessage(Util.getUserId(update), adminNotification));
+        User admin = userStorage.getUser(Util.getUserId(update));
+        admin.setWaitingMessages(false);
+        admin.setLastCallback(null);
+        userStorage.saveUser(admin);
+        return MessageWrapper.builder().sendMessage(msgs).build();
     }
 
     private MessageWrapper starting(Update update, TempObject tempObject) {
@@ -134,11 +173,13 @@ public class AdminAction implements Action {
         TempObject rejected = getTempForButton(tempObject, Operation.REJECTED_REQUEST,
                 ActionOnRequest.REJECTED, userAccommodation);
 
-        Map<String, String> data = new HashMap<>();
-        data.put("Одобрить", ProcessorUtil.getKeyAndSaveTemp(approved, tempStorage));
-        data.put("Изменить", ProcessorUtil.getKeyAndSaveTemp(edit, tempStorage));
-        data.put("Отклонить", ProcessorUtil.getKeyAndSaveTemp(rejected, tempStorage));
+        List<ButtonWrapper> data = new ArrayList<>();
 
+        data.add(new ButtonWrapper("Одобрить", Util.generateToken(approved), approved));
+        data.add(new ButtonWrapper("Изменить", Util.generateToken(edit), edit));
+        data.add(new ButtonWrapper("Отклонить", Util.generateToken(rejected), rejected));
+
+        wrapper.setButtons(data);
         ReplyKeyboard keyboard = Util.createKeyboardOneBtnLine(data);
         if (isWithPhotos(userAccommodation)) {
             if (userAccommodation.getPhotos().size() == 1) {
@@ -206,7 +247,6 @@ public class AdminAction implements Action {
                 messageWrapper.setSendMediaGroup(sendMediaGroup);
             }
         }
-        stringBuilder.append(userAccommodation.getDescription());
         sendMessageList.add(new SendMessage(String.valueOf(channelID),
                 stringBuilder.toString()));
         messageWrapper.setSendMessage(sendMessageList);

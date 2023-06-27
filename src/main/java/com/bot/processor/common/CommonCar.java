@@ -2,17 +2,14 @@ package com.bot.processor.common;
 
 import com.bot.common.Util;
 import com.bot.model.*;
-import com.bot.processor.ITempStorage;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 import java.util.*;
 
 @Component
 public class CommonCar {
-    public static MessageWrapper chooseEngine(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
+    public static MessageWrapper chooseEngine(Update update, TempObject tempObject, Operation step) {
         String text = "Укажи двигатель:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -29,10 +26,11 @@ public class CommonCar {
                 }
         );
 
-        Map<String, String> data = getCarData(tempObject, result, step,tempStorage);
-        return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
+        List<ButtonWrapper> data = getCarData(tempObject, result, step);
+        return ProcessorUtil.createMessages(text, update, data);
     }
-    public static MessageWrapper chooseModel(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
+
+    public static MessageWrapper chooseModel(Update update, TempObject tempObject, Operation step) {
         String text = "Теперь выбери модель:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -49,11 +47,11 @@ public class CommonCar {
                 }
         );
 
-        Map<String, String> data = getCarData(tempObject, result, step, tempStorage);
-        return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
+        List<ButtonWrapper> data = getCarData(tempObject, result, step);
+        return ProcessorUtil.createMessages(text, update, data);
     }
 
-    public static MessageWrapper chooseBrand(Update update, TempObject tempObject, ITempStorage tempStorage, Operation step) {
+    public static MessageWrapper chooseBrand(Update update, TempObject tempObject, Operation step) {
         String text = "Теперь выбери бренд:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -70,11 +68,11 @@ public class CommonCar {
                 }
         );
 
-        Map<String, String> data = getCarData(tempObject, result, step, tempStorage);
-        return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
+        List<ButtonWrapper> data = getCarData(tempObject, result, step);
+        return ProcessorUtil.createMessages(text, update, data);
     }
 
-    public static MessageWrapper chooseConcern(Update update, TempObject tempObject, List<Car> cars, ITempStorage tempStorage, Operation step) {
+    public static MessageWrapper chooseConcern(Update update, TempObject tempObject, List<Car> cars, Operation step) {
         String text = "Выбери концерн, к которому относится твой автомобиль:";
         Map<String, List<Car>> carByConcern = new HashMap<>();
         cars.forEach(
@@ -90,8 +88,8 @@ public class CommonCar {
                 }
         );
 
-        Map<String, String> data = getCarData(tempObject, carByConcern, step, tempStorage);
-        return createMessages(text, update, Util.createKeyboardOneBtnLine(data));
+        List<ButtonWrapper> buttonWrappers = getCarData(tempObject, carByConcern, step);
+        return ProcessorUtil.createMessages(text, update, buttonWrappers);
     }
 
     public static List<String> getCarsId(List<Car> cars) {
@@ -101,41 +99,27 @@ public class CommonCar {
     }
 
 
-    private static MessageWrapper createMessages(String text, Update update, InlineKeyboardMarkup inlineKeyboardMarkup) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setText(text);
-        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-        sendMessage.setChatId(Util.getUserId(update));
-        return MessageWrapper.builder().sendMessage(Collections.singletonList(sendMessage)).build();
-    }
+    private static List<ButtonWrapper> getCarData(TempObject tempObject,
+                                                  Map<String, List<Car>> data,
+                                                  Operation step) {
+        List<ButtonWrapper> result = new ArrayList<>();
 
-    private static Map<String, String> getCarData(TempObject tempObject,
-                                                  Map<String, List<Car>> result,
-                                                  Operation step, ITempStorage tempStorage) {
-        Map<String, String> data = new HashMap<>();
-
-        for (Map.Entry<String, List<Car>> entry : result.entrySet()) {
+        data.forEach((key, value) -> {
             TempObject newTemp = tempObject.clone();
             if (newTemp.getOption() != null) {
                 newTemp.getOption().getCarList().clear();
-                newTemp.getOption().getCarList().addAll(entry.getValue());
-                newTemp.getOption().setCarValue(entry.getKey());
+                newTemp.getOption().getCarList().addAll(value);
+                newTemp.getOption().setCarValue(key);
             } else {
                 OptionData optionData = new OptionData();
-                optionData.setCarList(entry.getValue());
-                optionData.setCarValue(entry.getKey());
+                optionData.setCarList(value);
+                optionData.setCarValue(key);
                 newTemp.setOption(optionData);
             }
             newTemp.setOperation(step);
-            String key = getKeyAndSaveTemp(newTemp, tempStorage);
-            data.put(entry.getKey(), key);
-        }
-        return data;
-    }
-
-    private static String getKeyAndSaveTemp(TempObject newTemp, ITempStorage tempStorage) {
-        String key = Util.generateToken(newTemp);
-        tempStorage.set(key, newTemp.toString());
-        return key;
+            String tempKey = Util.generateToken(newTemp);
+            result.add(new ButtonWrapper(key, tempKey, newTemp));
+        });
+        return result;
     }
 }

@@ -17,9 +17,9 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -57,9 +57,10 @@ public class Processor implements IProcessor {
                 result = startProcessingCallback(update);
             } else {
                 msg.setText("Выбери дейтсвие:");
-                Map<String, String> data = createMenuData(update, userStorage.getUser(userId));
+                List<ButtonWrapper> data = createMenuData(update, userStorage.getUser(userId));
                 msg.setReplyMarkup(Util.createKeyboardOneBtnLine(data));
-                result = MessageWrapper.builder().sendMessage(Collections.singletonList(msg)).build();
+                result = MessageWrapper.builder().sendMessage(Collections.singletonList(msg)).
+                        buttons(data).build();
             }
             return result;
 
@@ -67,19 +68,15 @@ public class Processor implements IProcessor {
             //Если пользователя нет - предлогаем регистрацию
             msg.setChatId(userId);
             msg.setText("К сожалению, ты не зарегистрирован. Нажми на кнопку регистрации");
-            Map<String, String> data = new HashMap<>();
-            String key = getKeyAndSaveStartTemp(update, Action.REGISTRATION);
-            data.put("Регистрация", key);
-            msg.setReplyMarkup(Util.createKeyboardThreeBtn(data));
-            result = MessageWrapper.builder().sendMessage(Collections.singletonList(msg)).build();
+            List<ButtonWrapper> data = new ArrayList<>();
+            TempObject regTemp = getTemp(update, Action.REGISTRATION);
+            String key = Util.generateToken(regTemp);
+            data.add(new ButtonWrapper("Регистрация", key, regTemp));
+            msg.setReplyMarkup(Util.createKeyboardOneBtnLine(data));
+            result = MessageWrapper.builder().sendMessage(Collections.singletonList(msg)).buttons(data).build();
             return result;
         }
     }
-
-
-
-
-
 
 
     private MessageWrapper startProcessingCallback(Update update) {
@@ -132,26 +129,32 @@ public class Processor implements IProcessor {
         }
     }
 
-    private Map<String, String> createMenuData(Update update, User user) {
-        Map<String, String> menu = new HashMap<>();
-        menu.put("Личный кабинет", getKeyAndSaveStartTemp(update, Action.CABINET));
-        menu.put("Продать", getKeyAndSaveStartTemp(update, Action.SALE));
-        menu.put("Запрос на поиск", getKeyAndSaveStartTemp(update, Action.SEARCH));
+    private List<ButtonWrapper> createMenuData(Update update, User user) {
+        List<ButtonWrapper> menu = new ArrayList<>();
+        TempObject cabinetTemp = getTemp(update, Action.CABINET);
+        menu.add(new ButtonWrapper("Личный кабинет", Util.generateToken(cabinetTemp), cabinetTemp));
+
+        TempObject saleTemp = getTemp(update, Action.SALE);
+        menu.add(new ButtonWrapper("Продать", Util.generateToken(saleTemp), saleTemp));
+
+        TempObject searchTemp = getTemp(update, Action.SEARCH);
+        menu.add(new ButtonWrapper("Запрос на поиск", Util.generateToken(searchTemp), searchTemp));
         if (user.getRole().equals(Role.ADMIN_ROLE)) {
-            menu.put("Cтатистика", getKeyAndSaveStartTemp(update, Action.STATISTICS));
-            menu.put("Запросы", getKeyAndSaveStartTemp(update, Action.ADMIN));
+
+            TempObject statisticTemp = getTemp(update, Action.STATISTICS);
+            menu.add(new ButtonWrapper("Cтатистика", Util.generateToken(statisticTemp), statisticTemp));
+
+            TempObject adminTemp = getTemp(update, Action.ADMIN);
+            menu.add(new ButtonWrapper("Запросы", Util.generateToken(adminTemp), adminTemp));
         }
         return menu;
     }
 
-    private String getKeyAndSaveStartTemp(Update update, Action action) {
-        TempObject tempObject = TempObject.builder()
+    private TempObject getTemp(Update update, Action action) {
+        return TempObject.builder()
                 .userId(Util.getUserId(update))
                 .operation(Operation.START)
                 .action(action).build();
-        String key = Util.generateToken(tempObject);
-        tempStorage.set(key, tempObject.toString());
-        return key;
     }
 
 
