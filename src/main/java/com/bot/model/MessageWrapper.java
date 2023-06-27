@@ -38,11 +38,12 @@ public class MessageWrapper {
         this.sendMediaGroup = sendMediaGroup;
     }
 
-    public void addTemp(String key, TempObject value) {
+    public MessageWrapper addTemp(String key, TempObject value) {
         if (this.temp == null) {
             this.temp = new HashMap<>();
         }
         this.temp.put(key,value);
+        return this;
     }
 
     public void setButtons(List<ButtonWrapper> buttons) {

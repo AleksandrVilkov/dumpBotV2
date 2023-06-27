@@ -8,7 +8,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.*;
 
 @Component
-public class CommonCar {
+public class CarOperation {
     public static MessageWrapper chooseEngine(Update update, TempObject tempObject, Operation step) {
         String text = "Укажи двигатель:";
 
@@ -94,7 +94,9 @@ public class CommonCar {
 
     public static List<String> getCarsId(List<Car> cars) {
         List<String> ids = new ArrayList<>();
-        cars.forEach(car -> ids.add(String.valueOf(car.getId())));
+        if (cars != null) {
+            cars.forEach(car -> ids.add(String.valueOf(car.getId())));
+        }
         return ids;
     }
 

@@ -7,13 +7,13 @@ import com.bot.processor.Action;
 import com.bot.processor.IAccommodationStorage;
 import com.bot.processor.ICarStorage;
 import com.bot.processor.IUserStorage;
-import com.bot.processor.common.CommonCar;
+import com.bot.processor.common.CarOperation;
+import com.bot.processor.common.PhotoOperation;
 import com.bot.processor.common.ProcessorUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.PhotoSize;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.*;
@@ -85,7 +85,7 @@ public class SaleAction implements Action {
         sendMessage.setChatId(Util.getUserId(update));
         List<ButtonWrapper> data = new ArrayList<>();
         data.add(new ButtonWrapper("Начать", Util.generateToken(newTemp), newTemp));
-        return ProcessorUtil.createMessages(text, update,data);
+        return ProcessorUtil.createMessages(text, update, data);
     }
 
     private MessageWrapper secondStep(Update update, TempObject tempObject) {
@@ -107,19 +107,19 @@ public class SaleAction implements Action {
                     }
                 }
         );
-        return CommonCar.chooseConcern(update, tempObject, cars, Operation.BRAND_SELECTION);
+        return CarOperation.chooseConcern(update, tempObject, cars, Operation.BRAND_SELECTION);
     }
 
     private MessageWrapper thirdStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseBrand(update, tempObject, Operation.MODEL_SELECTION);
+        return CarOperation.chooseBrand(update, tempObject, Operation.MODEL_SELECTION);
     }
 
     private MessageWrapper fourthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseModel(update, tempObject, Operation.ENGINE_SELECTION);
+        return CarOperation.chooseModel(update, tempObject, Operation.ENGINE_SELECTION);
     }
 
     private MessageWrapper fifthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseEngine(update, tempObject, Operation.PRE_PHOTO);
+        return CarOperation.chooseEngine(update, tempObject, Operation.PRE_PHOTO);
     }
 
     private MessageWrapper sixthStep(Update update, TempObject tempObject) {
@@ -144,37 +144,10 @@ public class SaleAction implements Action {
 
     private MessageWrapper seventhStep(Update update, TempObject tempObject) {
         User user = userStorage.getUser(Util.getUserId(update));
-        String text;
         TempObject newTemp = tempObject.clone();
-        if (user.isWaitingMessages()) {
-            List<PhotoSize> photoSizes = update.getMessage().getPhoto();
-            Set<String> photoIds = new HashSet<>();
-            List<ButtonWrapper> buttons = new ArrayList<>();
-
-            photoSizes.forEach(photoSize -> {
-                //TODO проверять уникальность
-                photoIds.add(photoSize.getFileId());
-            });
-
-            if (newTemp.getSelectedData().getPhotos() == null) {
-                newTemp.getSelectedData().setPhotos(new ArrayList<>());
-            }
-            newTemp.getSelectedData().getPhotos().addAll(photoIds);
-            newTemp.setOperation(Operation.DESCRIPTION);
-
-            String buttonName = "Готово";
-            String key = Util.generateToken(newTemp);
-            user.setLastCallback(key);
-            buttons.add(new ButtonWrapper(buttonName, key, newTemp));
-            text = "Отлично. Если есть еще фото - дай их мне. Если нет - нажми кнопку " + buttonName;
-            return ProcessorUtil.createMessages(text, update, buttons);
-        } else {
-            text = "Пришли мне фотографии. Фото можно прислать как по одному, так и группой.";
-            user.setWaitingMessages(true);
-            user.setLastCallback(Util.generateToken(newTemp));
-        }
+        MessageWrapper messageWrapper = PhotoOperation.addPhoto(user, update, newTemp);
         userStorage.saveUser(user);
-        return ProcessorUtil.createMessages(text, update);
+        return messageWrapper;
     }
 
     private MessageWrapper eighthStep(Update update, TempObject tempObject) {
@@ -205,7 +178,7 @@ public class SaleAction implements Action {
                 .topical(true)
                 .description(description)
                 .photos(newTemp.getSelectedData().getPhotos())
-                .carsId(CommonCar.getCarsId(tempObject.getSelectedData().getCars()))
+                .carsId(CarOperation.getCarsId(tempObject.getSelectedData().getCars()))
                 .build();
 
         if (accommodationStorage.saveAccommodation(userAccommodation)) {
@@ -217,7 +190,6 @@ public class SaleAction implements Action {
             for (User admin : admins) {
                 result.add(new SendMessage(admin.getLogin(), adminText));
             }
-
             user.setWaitingMessages(false);
             user.setLastCallback(null);
             userStorage.saveUser(user);

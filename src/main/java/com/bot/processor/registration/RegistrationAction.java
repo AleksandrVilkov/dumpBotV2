@@ -7,7 +7,7 @@ import com.bot.processor.Action;
 import com.bot.processor.ICarStorage;
 import com.bot.processor.IRegionStorage;
 import com.bot.processor.IUserStorage;
-import com.bot.processor.common.CommonCar;
+import com.bot.processor.common.CarOperation;
 import com.bot.processor.common.ProcessorUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,7 +107,8 @@ public class RegistrationAction implements Action {
         int currentPage = RegistrationHelper.defineCurrentPage(navigation);
         int nextPage = RegistrationHelper.defineNextPage(navigation, currentPage);
 
-        List<Region> regions = regionStorage.getRegionPageByCountryCode(countryCode, nextPage == 0 ? 0 : nextPage - 1, countRegionsOnPage, true);
+        List<Region> regions = regionStorage.getRegionPageByCountryCode(countryCode,
+                nextPage == 0 ? 0 : nextPage - 1, countRegionsOnPage, true);
 
         List<ButtonWrapper> buttons = getRegionButtons(regions, tempObject);
         if (currentPage != 0) {
@@ -137,19 +138,19 @@ public class RegistrationAction implements Action {
                     }
                 }
         );
-        return CommonCar.chooseConcern(update, tempObject, cars, Operation.BRAND_SELECTION);
+        return CarOperation.chooseConcern(update, tempObject, cars, Operation.BRAND_SELECTION);
     }
 
     private MessageWrapper fourthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseBrand(update, tempObject, Operation.MODEL_SELECTION);
+        return CarOperation.chooseBrand(update, tempObject, Operation.MODEL_SELECTION);
     }
 
     private MessageWrapper fifthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseModel(update, tempObject, Operation.ENGINE_SELECTION);
+        return CarOperation.chooseModel(update, tempObject, Operation.ENGINE_SELECTION);
     }
 
     private MessageWrapper sixthStep(Update update, TempObject tempObject) {
-        return CommonCar.chooseEngine(update, tempObject, Operation.END);
+        return CarOperation.chooseEngine(update, tempObject, Operation.END);
     }
 
     private MessageWrapper seventhStep(Update update, TempObject tempObject) {

@@ -82,7 +82,7 @@ public class Processor implements IProcessor {
     private MessageWrapper startProcessingCallback(Update update) {
         //Мы ожидаем ключ. По этому ключу из редиса дергаем темп.
         String key;
-        if (!update.hasCallbackQuery()) {
+        if (!update.hasCallbackQuery() || hasPhoto(update)) {
             User user = userStorage.getUser(Util.getUserId(update));
             key = user.getLastCallback();
         } else {
@@ -102,6 +102,7 @@ public class Processor implements IProcessor {
                 log.error(e.getMessage());
                 return CommonMsgs.createCommonError(update);
             }
+            checkTemp(tempObject);
             switch (tempObject.getAction()) {
                 case REGISTRATION -> {
                     return registrationAction.execute(update, tempObject);
@@ -126,6 +127,26 @@ public class Processor implements IProcessor {
         } else {
             log.error("tempObject is empty!");
             return CommonMsgs.createCommonError(update);
+        }
+    }
+
+    private void checkTemp(TempObject tempObject) {
+        initSelectedData(tempObject);
+    }
+
+    private boolean hasPhoto(Update update) {
+        if (update.hasMessage()) {
+            return update.getMessage().getPhoto() != null && !update.getMessage().getPhoto().isEmpty();
+        }
+        return false;
+    }
+
+    private void initSelectedData(TempObject tempObject) {
+        if (tempObject.getSelectedData() == null) {
+            tempObject.setSelectedData(new SelectedData());
+        }
+        if (tempObject.getSelectedData().getPhotos() == null) {
+            tempObject.getSelectedData().setPhotos(new ArrayList<>());
         }
     }
 

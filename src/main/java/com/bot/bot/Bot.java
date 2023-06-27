@@ -42,6 +42,14 @@ public class Bot extends TelegramLongPollingBot {
         return config.getToken();
     }
 
+    /**
+     * Получаем update, показываем что бот что то печатает.
+     * Проверяем, подписал ли человек на канал. Если не подписан - даем ошибку что надо бы подписаться.
+     * Запускаем процесс, на выходе получаем MessageWrapper.
+     * Сохраняем временные файлы. (Кнопки, и все что есть во временных данных.
+     * Отправляем результат процесса, удаляем старые сообщения
+     * */
+
     @Override
     public void onUpdateReceived(Update update) {
         //Отправим анимацию "Печатает..."
@@ -83,8 +91,7 @@ public class Bot extends TelegramLongPollingBot {
             return;
         }
         String userId = Util.getUserId(update);
-
-        //Счтитаем, может быть не более 10 сообщений в чате
+        //Счтитаем, может быть не более 15 сообщений в чате
         for (int i = 0; i < 15; i++) {
             int messageId = Util.getMessageId(update) - i;
             DeleteMessage deleteMessage = new DeleteMessage(userId, messageId);
@@ -95,7 +102,6 @@ public class Bot extends TelegramLongPollingBot {
                 log.warn("Unable to delete message for user " + userId + ". Message id " + messageId + " does not exist");
             }
         }
-
     }
 
     private void sendMsgs(MessageWrapper msgs, Update update) {
