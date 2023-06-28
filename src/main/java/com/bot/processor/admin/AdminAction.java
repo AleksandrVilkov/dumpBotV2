@@ -5,8 +5,9 @@ import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
 import com.bot.processor.Action;
-import com.bot.processor.*;
-import com.bot.processor.common.ProcessorUtil;
+import com.bot.processor.IAccommodationStorage;
+import com.bot.processor.ICarStorage;
+import com.bot.processor.IUserStorage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,10 @@ import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -38,13 +42,12 @@ public class AdminAction implements Action {
     @Override
     public MessageWrapper execute(Update update, TempObject tempObject) {
 
-        //TODO нужно отрефакторить
+        //TODO нужно отрефакторить, много одинакового впомогательного кода. Нужно вынести в хелпер
         switch (tempObject.getOperation()) {
             case START -> {
                 log.info("Start " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return starting(update, tempObject);
             }
-
             case APPROVED_REQUEST -> {
                 return approved(update, tempObject);
             }
@@ -60,6 +63,9 @@ public class AdminAction implements Action {
             case EDIT_DESCRIPTION -> {
                 return editDescription(update, tempObject);
             }
+            case ENTER_NEW_DESCRIPTION -> {
+                return saveNewDescription(update, tempObject);
+            }
             default -> {
                 log.error("Cannot find step number in " + ACTION_NAME + " for user " + Util.getUserId(update));
                 return CommonMsgs.createCommonError(update);
@@ -67,14 +73,34 @@ public class AdminAction implements Action {
         }
     }
 
+    private MessageWrapper saveNewDescription(Update update, TempObject tempObject) {
+        UserAccommodation accommodation = tempObject.getAdministrationData().getUserAccommodation();
+        accommodation.setDescription(update.getMessage().getText());
+        //TODO подпорка, убрать. Тут нет даты почему то
+        accommodation.setCreatedDate(new Date());
+        accommodationStorage.saveAccommodation(accommodation);
+
+        User admin = userStorage.getUser(Util.getUserId(update));
+        admin.setWaitingMessages(false);
+        admin.setLastCallback(null);
+        userStorage.saveUser(admin);
+
+        return starting(update, tempObject, accommodation);
+    }
+
     private MessageWrapper editDescription(Update update, TempObject tempObject) {
+        tempObject.setOperation(Operation.ENTER_NEW_DESCRIPTION);
+        String key = Util.generateToken(tempObject);
+
         User user = userStorage.getUser(Util.getUserId(update));
         user.setWaitingMessages(true);
-        tempObject.setOperation(Operation.ENTER_NEW_DESCRIPTION);
-        MessageWrapper messageWrapper = new MessageWrapper();
+        user.setLastCallback(key);
+        userStorage.saveUser(user);
+
         SendMessage sendMessage = new SendMessage(Util.getUserId(update), "Измените текст:");
-        //TODO
-        return messageWrapper;
+        return MessageWrapper.builder()
+                .sendMessage(Collections.singletonList(sendMessage))
+                .leaveOldMessages(true).build().addTemp(key, tempObject);
     }
 
     private MessageWrapper approved(Update update, TempObject tempObject) {
@@ -114,9 +140,13 @@ public class AdminAction implements Action {
         String text = "Изменить описание";
         TempObject newTemp = tempObject.clone();
         newTemp.setOperation(Operation.EDIT_DESCRIPTION);
-        ButtonWrapper buttonWrapper = new ButtonWrapper(text, Util.generateToken(newTemp), tempObject);
+        ButtonWrapper buttonWrapper = new ButtonWrapper(text, Util.generateToken(newTemp), newTemp);
+        ReplyKeyboard keyboard = Util.createKeyboardOneBtnLine(Collections.singletonList(buttonWrapper));
         SendMessage sendMessage = new SendMessage(Util.getUserId(update), "Выбери, что именно изменить:");
-        return MessageWrapper.builder().buttons(Collections.singletonList(buttonWrapper)).sendMessage(Collections.singletonList(sendMessage)).build();
+        sendMessage.setReplyMarkup(keyboard);
+        return MessageWrapper.builder()
+                .sendMessage(Collections.singletonList(sendMessage)).leaveOldMessages(true)
+                .buttons(Collections.singletonList(buttonWrapper)).build();
     }
 
     private MessageWrapper rejected(Update update, TempObject tempObject) {
@@ -151,7 +181,13 @@ public class AdminAction implements Action {
         return MessageWrapper.builder().sendMessage(msgs).build();
     }
 
+
     private MessageWrapper starting(Update update, TempObject tempObject) {
+        UserAccommodation userAccommodation = accommodationStorage.getFirstNotAgreed();
+        return starting(update, tempObject, userAccommodation);
+    }
+
+    private MessageWrapper starting(Update update, TempObject tempObject, UserAccommodation userAccommodation) {
         MessageWrapper wrapper = new MessageWrapper();
         int count = accommodationStorage.countNotAgreed();
         if (count == 0) {
@@ -159,8 +195,6 @@ public class AdminAction implements Action {
                     .sendMessage(Collections.singletonList(new SendMessage(Util.getUserId(update), "Не обработанных заявок нет")))
                     .build();
         }
-
-        UserAccommodation userAccommodation = accommodationStorage.getFirstNotAgreed();
         User user = userStorage.getUser(userAccommodation.getClientLogin());
         String text = generateAccommodationMsgText(userAccommodation, user, count);
         TempObject approved = getTempForButton(tempObject, Operation.APPROVED_REQUEST,
@@ -216,8 +250,9 @@ public class AdminAction implements Action {
         if (userAccommodation.getType().equals(AccommodationType.SEARCH)) {
             stringBuilder.append("Куплю: ");
         }
+        stringBuilder.append(userAccommodation.getDescription()).append(SEPARATOR);
         if (userAccommodation.getCarsId() != null && !userAccommodation.getCarsId().isEmpty()) {
-            stringBuilder.append(userAccommodation.getDescription()).append(SEPARATOR).append("Подходит к автомобилям: ");
+            stringBuilder.append("Подходит к автомобилям: ");
             for (String id : userAccommodation.getCarsId()) {
                 Car car = carStorage.getCarById(Integer.parseInt(id));
                 stringBuilder.append(car.getBrand().getName()).append(" ")

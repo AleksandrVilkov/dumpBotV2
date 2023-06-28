@@ -194,7 +194,7 @@ public class SearchAction implements Action {
         String description = update.getMessage().getText();
         User user = userStorage.getUser(Util.getUserId(update));
         UserAccommodation.UserAccommodationBuilder builder = UserAccommodation.builder()
-                .type(AccommodationType.SALE)
+                .type(AccommodationType.SEARCH)
                 .createdDate(new Date())
                 .clientLogin(user.getLogin())
                 .clientId(user.getId())

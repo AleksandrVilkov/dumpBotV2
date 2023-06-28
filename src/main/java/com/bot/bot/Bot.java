@@ -48,7 +48,7 @@ public class Bot extends TelegramLongPollingBot {
      * Запускаем процесс, на выходе получаем MessageWrapper.
      * Сохраняем временные файлы. (Кнопки, и все что есть во временных данных.
      * Отправляем результат процесса, удаляем старые сообщения
-     * */
+     */
 
     @Override
     public void onUpdateReceived(Update update) {
