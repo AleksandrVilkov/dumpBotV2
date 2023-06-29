@@ -80,7 +80,6 @@ public class SearchAction implements Action {
     }
 
     private MessageWrapper firstStep(Update update, TempObject tempObject) {
-        int step = 1;
         String text = "Давай разместим запрос на поиск. Нажми кнопку \"Начать\"";
         TempObject newTemp = tempObject.clone();
         newTemp.setOperation(Operation.NEED_CAR);

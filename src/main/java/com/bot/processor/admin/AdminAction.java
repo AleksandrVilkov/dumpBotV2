@@ -4,8 +4,8 @@ import com.bot.bot.BotConfig;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
-import com.bot.processor.*;
 import com.bot.processor.Action;
+import com.bot.processor.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -44,7 +44,7 @@ public class AdminAction implements Action {
                 return approved(update, tempObject);
             }
             case REJECTED_REQUEST -> {
-                return rejected(update, tempObject,user);
+                return rejected(update, tempObject, user);
             }
             case SEND_REJECTED_REQUEST -> {
                 return sendRejected(update, tempObject, user);
@@ -109,7 +109,6 @@ public class AdminAction implements Action {
     }
 
 
-
     private MessageWrapper edit(Update update, TempObject tempObject) {
         String text = "Изменить описание";
         TempObject newTemp = tempObject.clone();
@@ -168,9 +167,7 @@ public class AdminAction implements Action {
                     .build();
         }
         List<Car> cars = new ArrayList<>();
-        userAccommodation.getCarsId().forEach(id -> {
-            cars.add(carStorage.getCarById(Integer.parseInt(id)));
-        });
+        userAccommodation.getCarsId().forEach(id -> cars.add(carStorage.getCarById(Integer.parseInt(id))));
 
         String text = AdminHelper.generateAccommodationMsgText(userAccommodation, user, count, cars);
         TempObject approved = AdminHelper.getTempForButton(tempObject, Operation.APPROVED_REQUEST,
@@ -192,7 +189,7 @@ public class AdminAction implements Action {
         wrapper.setButtons(data);
         ReplyKeyboard keyboard = Util.createKeyboardOneBtnLine(data);
         if (AdminHelper.isWithPhotos(userAccommodation)) {
-            AdminHelper.addPhotos(wrapper,userAccommodation,update,text, keyboard);
+            AdminHelper.addPhotos(wrapper, userAccommodation, update, text, keyboard);
         } else {
             SendMessage sendMessage = new SendMessage(Util.getUserId(update), text);
             sendMessage.setReplyMarkup(keyboard);

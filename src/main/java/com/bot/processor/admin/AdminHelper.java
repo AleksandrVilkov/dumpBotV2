@@ -87,11 +87,11 @@ public class AdminHelper {
                 .append("Тип запроса: ").append(userAccommodation.getType().name()).append(SEPARATOR);
         if (userAccommodation.getCarsId() != null && !userAccommodation.getCarsId().isEmpty()) {
             stringBuilder.append("Указаны автомобили: ");
-            cars.forEach(car -> {
-                stringBuilder.append(car.getBrand().getName()).append(" ")
-                        .append(car.getModel().getName())
-                        .append(" (").append(car.getEngine().getName()).append(")").append(SEPARATOR);
-            });
+            cars.forEach(car ->
+                    stringBuilder.append(car.getBrand().getName()).append(" ")
+                            .append(car.getModel().getName())
+                            .append(" (").append(car.getEngine().getName()).append(")").append(SEPARATOR)
+            );
 
         } else {
             stringBuilder.append("Автомобили не указаны.").append(SEPARATOR);

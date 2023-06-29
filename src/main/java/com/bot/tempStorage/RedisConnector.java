@@ -32,8 +32,8 @@ public class RedisConnector implements ITempStorage {
     }
 
     @Override
-    public String set(String key, String data) {
-        return jedis.set(key, data);
+    public void set(String key, String data) {
+        jedis.set(key, data);
     }
 
     @Override
@@ -47,12 +47,9 @@ public class RedisConnector implements ITempStorage {
     }
 
     @Override
-    public List<String> setList(String key, List<String> data) {
+    public void setList(String key, List<String> data) {
         StringBuilder builder = new StringBuilder();
-        data.forEach(string -> {
-            builder.append(string).append(SEP);
-        });
+        data.forEach(string -> builder.append(string).append(SEP));
         jedis.set(key, builder.toString());
-        return data;
     }
 }
