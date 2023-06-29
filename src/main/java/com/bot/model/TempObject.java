@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -17,6 +19,7 @@ public class TempObject implements Cloneable {
     private Navigation navigation;
     private String description;
     private AdministrationData administrationData;
+    private List<String> deleteMsgsIdInNxtStep;
 
     public TempObject() {
         this.selectedData = new SelectedData();

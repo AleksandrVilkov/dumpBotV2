@@ -4,7 +4,9 @@ import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
 import com.bot.processor.Action;
-import com.bot.processor.*;
+import com.bot.processor.IAccommodationStorage;
+import com.bot.processor.ICarStorage;
+import com.bot.processor.INotificationCenter;
 import com.bot.processor.common.CarOperation;
 import com.bot.processor.common.PhotoOperation;
 import com.bot.processor.common.ProcessorUtil;
@@ -20,18 +22,14 @@ import java.util.*;
 @Slf4j
 public class SearchAction implements Action {
     @Autowired
-    ITempStorage tempStorage;
-    @Autowired
     ICarStorage carStorage;
-
-    @Autowired
-    IUserStorage userStorage;
-
     @Autowired
     IAccommodationStorage accommodationStorage;
+    @Autowired
+    INotificationCenter notificationCenter;
 
     @Override
-    public MessageWrapper execute(Update update, TempObject tempObject) {
+    public MessageWrapper execute(Update update, TempObject tempObject, User user) {
         final String ACTION_NAME = "SEARCH";
         switch (tempObject.getOperation()) {
             case START -> {
@@ -64,15 +62,15 @@ public class SearchAction implements Action {
             }
             case PHOTO -> {
                 log.info("Start PHOTO " + ACTION_NAME + " step for user " + Util.getUserId(update));
-                return eighthStep(update, tempObject);
+                return eighthStep(update, tempObject, user);
             }
             case DESCRIPTION -> {
                 log.info("Start DESCRIPTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
-                return ninthStep(update, tempObject);
+                return ninthStep(update, tempObject, user);
             }
             case END -> {
                 log.info("Start 9 " + ACTION_NAME + " step for user " + Util.getUserId(update));
-                return tenthStep(update, tempObject);
+                return tenthStep(update, tempObject, user);
             }
             default -> {
                 log.error("Cannot find step number in " + ACTION_NAME + " for user " + Util.getUserId(update));
@@ -167,32 +165,26 @@ public class SearchAction implements Action {
         return ProcessorUtil.createMessages(text, update, data);
     }
 
-    private MessageWrapper eighthStep(Update update, TempObject tempObject) {
-        User user = userStorage.getUser(Util.getUserId(update));
+    private MessageWrapper eighthStep(Update update, TempObject tempObject, User user) {
         TempObject newTemp = tempObject.clone();
-        MessageWrapper messageWrapper = PhotoOperation.addPhoto(user,update,newTemp);
-        userStorage.saveUser(user);
-        return messageWrapper;
+        return PhotoOperation.addPhoto(user, update, newTemp);
     }
 
-    private MessageWrapper ninthStep(Update update, TempObject tempObject) {
+    private MessageWrapper ninthStep(Update update, TempObject tempObject, User user) {
         String text = "Опиши то, что ты ищешь:";
-        User user = userStorage.getUser(Util.getUserId(update));
         TempObject newTemp = tempObject.clone();
         newTemp.setOperation(Operation.END);
         user.setWaitingMessages(true);
         String key = Util.generateToken(newTemp);
         user.setLastCallback(key);
-        userStorage.saveUser(user);
         MessageWrapper messageWrapper = ProcessorUtil.createMessages(text, update);
         messageWrapper.addTemp(key, newTemp);
         return messageWrapper;
     }
 
-    private MessageWrapper tenthStep(Update update, TempObject tempObject) {
+    private MessageWrapper tenthStep(Update update, TempObject tempObject, User user) {
         TempObject newTemp = tempObject.clone();
         String description = update.getMessage().getText();
-        User user = userStorage.getUser(Util.getUserId(update));
         UserAccommodation.UserAccommodationBuilder builder = UserAccommodation.builder()
                 .type(AccommodationType.SEARCH)
                 .createdDate(new Date())
@@ -209,18 +201,13 @@ public class SearchAction implements Action {
         }
         UserAccommodation userAccommodation = builder.build();
         if (accommodationStorage.saveAccommodation(userAccommodation)) {
-            List<User> admins = userStorage.findAdmins();
             String userText = "Отлично, твой запрос отправлен на модерацию. После одобрения он будет размещен на канале. Я сообщую об этом.";
             String adminText = "Поступил новый запрос на поиски детали: " + userAccommodation.getDescription() + "\n Открой кабинет администратора для обработки. /start";
             List<SendMessage> result = new ArrayList<>();
             result.add(new SendMessage(Util.getUserId(update), userText));
-            for (User admin : admins) {
-                result.add(new SendMessage(admin.getLogin(), adminText));
-            }
-
+            result.addAll(notificationCenter.getMsgsForAllAdmins(adminText));
             user.setWaitingMessages(false);
             user.setLastCallback(null);
-            userStorage.saveUser(user);
             return MessageWrapper.builder().sendMessage(result).build();
         } else {
             log.error("error saving user accommodation for user " + Util.getUserId(update));

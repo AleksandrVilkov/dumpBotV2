@@ -1,6 +1,5 @@
 package com.bot.processor;
 
-import com.bot.bot.Bot;
 import com.bot.bot.IProcessor;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
@@ -15,7 +14,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -45,27 +43,21 @@ public class Processor implements IProcessor {
     public MessageWrapper startProcessing(Update update) {
         String userId = Util.getUserId(update);
         boolean userCreated = userStorage.checkUser(userId);
-
         MessageWrapper result;
-
-        if (update.hasCallbackQuery() || updateHasPhoto(update)) {
-            return startProcessingCallback(update);
-        }
         SendMessage msg = new SendMessage();
         msg.setChatId(userId);
         if (userCreated) {
             User user = userStorage.getUser(userId);
-            if (user.isWaitingMessages()) {
-                result = startProcessingCallback(update);
+            if (update.hasCallbackQuery() || updateHasPhoto(update) || user.isWaitingMessages()) {
+                result = startProcessingCallback(update, user);
             } else {
                 msg.setText("Выбери дейтсвие:");
-                List<ButtonWrapper> data = createMenuData(update, userStorage.getUser(userId));
+                List<ButtonWrapper> data = createMenuData(update,user);
                 msg.setReplyMarkup(Util.createKeyboardOneBtnLine(data));
                 result = MessageWrapper.builder().sendMessage(Collections.singletonList(msg)).
                         buttons(data).build();
             }
-            return result;
-
+            userStorage.saveUser(user);
         } else {
             //Если пользователя нет - предлогаем регистрацию
             msg.setChatId(userId);
@@ -76,16 +68,15 @@ public class Processor implements IProcessor {
             data.add(new ButtonWrapper("Регистрация", key, regTemp));
             msg.setReplyMarkup(Util.createKeyboardOneBtnLine(data));
             result = MessageWrapper.builder().sendMessage(Collections.singletonList(msg)).buttons(data).build();
-            return result;
         }
+        return result;
     }
 
 
-    private MessageWrapper startProcessingCallback(Update update) {
+    private MessageWrapper startProcessingCallback(Update update, User user) {
         //Мы ожидаем ключ. По этому ключу из редиса дергаем темп.
         String key;
         if (!update.hasCallbackQuery() || hasPhoto(update)) {
-            User user = userStorage.getUser(Util.getUserId(update));
             key = user.getLastCallback();
         } else {
             key = update.getCallbackQuery().getData();
@@ -107,19 +98,19 @@ public class Processor implements IProcessor {
             checkTemp(tempObject);
             switch (tempObject.getAction()) {
                 case REGISTRATION -> {
-                    return registrationAction.execute(update, tempObject);
+                    return registrationAction.execute(update, tempObject, null);
                 }
                 case SALE -> {
-                    return saleAction.execute(update, tempObject);
+                    return saleAction.execute(update, tempObject, user);
                 }
                 case SEARCH -> {
-                    return searchAction.execute(update, tempObject);
+                    return searchAction.execute(update, tempObject, user);
                 }
                 case ADMIN -> {
-                    return adminAction.execute(update, tempObject);
+                    return adminAction.execute(update, tempObject, user);
                 }
                 case CABINET -> {
-                    return cabinetAction.execute(update, tempObject);
+                    return cabinetAction.execute(update, tempObject, user);
                 }
                 default -> {
                     return CommonMsgs.createCommonError(update);
@@ -179,7 +170,6 @@ public class Processor implements IProcessor {
                 .operation(Operation.START)
                 .action(action).build();
     }
-
 
     private boolean updateHasPhoto(Update update) {
         return update.hasMessage() &&

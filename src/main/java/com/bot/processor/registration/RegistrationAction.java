@@ -30,7 +30,7 @@ public class RegistrationAction implements Action {
     IUserStorage userStorage;
 
     @Override
-    public MessageWrapper execute(Update update, TempObject tempObject) {
+    public MessageWrapper execute(Update update, TempObject tempObject, User user) {
         final String ACTION_NAME = "REGISTRATION";
         //Определяем шаг
         //TODO переделаем на энам

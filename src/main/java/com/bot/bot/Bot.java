@@ -14,10 +14,13 @@ import org.telegram.telegrambots.meta.api.methods.ActionType;
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 @Component
 @Getter
@@ -63,7 +66,21 @@ public class Bot extends TelegramLongPollingBot {
             log.warn("user validate error");
         }
         saveTemp(msgs);
-        sendMsgs(msgs, update);
+        List<Message> newSendingMessages = sendMsgs(msgs);
+        processHistory(newSendingMessages, msgs, update);
+    }
+
+    private void processHistory(List<Message> newSendingMessages, MessageWrapper msgs, Update update) {
+        List<String> msgsId = new ArrayList<>();
+        newSendingMessages.forEach(message -> msgsId.add(String.valueOf(message.getMessageId())));
+        String key = "deleteMessageFor" + Util.getUserId(update);
+        List<String> deleting = tempStorage.getList(key);
+        if (msgs.isLeaveOldMessages()) {
+            msgsId.addAll(deleting);
+        } else {
+            deleteOldMessage(deleting, update);
+        }
+        tempStorage.setList(key, msgsId);
     }
 
     private void sendTyping(Update update) {
@@ -86,43 +103,50 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    private void deleteOldMessage(Update update, MessageWrapper messageWrapper) {
-        if (messageWrapper.isLeaveOldMessages()) {
-            return;
-        }
+    private void deleteOldMessage(List<String> deleting, Update update) {
         String userId = Util.getUserId(update);
-        //Счтитаем, может быть не более 15 сообщений в чате
-        for (int i = 0; i < 15; i++) {
-            int messageId = Util.getMessageId(update) - i;
-            DeleteMessage deleteMessage = new DeleteMessage(userId, messageId);
-            log.info(" Message id " + messageId + " was deleted for user " + userId);
+        deleting.forEach(msgId -> {
             try {
+                DeleteMessage deleteMessage = new DeleteMessage(userId, Integer.parseInt(msgId));
+                log.info(" Message id " + msgId + " was deleted for user " + userId);
                 execute(deleteMessage);
-            } catch (TelegramApiException e) {
-                log.warn("Unable to delete message for user " + userId + ". Message id " + messageId + " does not exist");
+            } catch (Exception e) {
+                log.warn("Unable to delete message for user " + userId + ". Message id " + msgId + " does not exist");
             }
+        });
+
+        int currentId = Util.getMessageId(update);
+        try {
+            DeleteMessage deleteMessage = new DeleteMessage(userId, currentId);
+            log.info("Current message with ID " + currentId + " was deleted for user " + userId);
+            execute(deleteMessage);
+        } catch (Exception e) {
+            log.warn("Unable to delete message for user " + userId + ". Message id " + currentId + " does not exist");
         }
     }
 
-    private void sendMsgs(MessageWrapper msgs, Update update) {
+    private List<Message> sendMsgs(MessageWrapper msgs) {
+        List<Message> newMessages = new ArrayList<>();
+
         try {
             if (msgs.getSendMediaGroup() != null) {
-                execute(msgs.getSendMediaGroup());
+                List<Message> execute = execute(msgs.getSendMediaGroup());
+                newMessages.addAll(execute);
             }
             if (msgs.getSendPhoto() != null) {
-                execute(msgs.getSendPhoto());
+                Message message = execute(msgs.getSendPhoto());
+                newMessages.add(message);
             }
             if (msgs.getSendMessage() != null && !msgs.getSendMessage().isEmpty()) {
                 for (SendMessage sendMessage : msgs.getSendMessage()) {
-                    execute(sendMessage);
+                    Message execute = execute(sendMessage);
+                    newMessages.add(execute);
                 }
             }
-            deleteOldMessage(update, msgs);
         } catch (TelegramApiException e) {
             log.error(e.getMessage());
-
-            throw new RuntimeException(e);
         }
+        return newMessages;
     }
 
 
