@@ -40,8 +40,7 @@ public class TempObject implements Cloneable {
     @Override
     public TempObject clone() {
         try {
-            TempObject clone = (TempObject) super.clone();
-            return clone;
+            return (TempObject) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
