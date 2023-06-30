@@ -11,7 +11,6 @@ import redis.clients.jedis.Jedis;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -38,18 +37,18 @@ public class RedisConnector implements ITempStorage {
 
     @Override
     public List<String> getList(String key) {
-        //TODO посмотреть как списки сохранять
-        String value = jedis.get(key);
-        if (value == null) {
-            return new ArrayList<>();
+        //TODO, не всегда норм отрабатывает
+        List<String> res = new ArrayList<>();
+        long size = jedis.llen(key.getBytes());
+        for (long i = 0; i<= size; i++) {
+            res.add(Arrays.toString(jedis.rpop(key.getBytes())));
         }
-        return Arrays.stream(value.split(SEP)).collect(Collectors.toList());
+        return res;
     }
 
     @Override
     public void setList(String key, List<String> data) {
-        StringBuilder builder = new StringBuilder();
-        data.forEach(string -> builder.append(string).append(SEP));
-        jedis.set(key, builder.toString());
+        String[] d = data.toArray(new String[0]);
+        jedis.lpush(key, d);
     }
 }
