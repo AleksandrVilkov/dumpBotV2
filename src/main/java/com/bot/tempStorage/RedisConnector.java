@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Getter
@@ -37,11 +36,13 @@ public class RedisConnector implements ITempStorage {
 
     @Override
     public List<String> getList(String key) {
-        //TODO, не всегда норм отрабатывает
         List<String> res = new ArrayList<>();
         long size = jedis.llen(key.getBytes());
-        for (long i = 0; i<= size; i++) {
-            res.add(Arrays.toString(jedis.rpop(key.getBytes())));
+        for (long i = 0; i <= size; i++) {
+            byte[] b = jedis.rpop(key.getBytes());
+            if (b != null) {
+                res.add(new String(b));
+            }
         }
         return res;
     }

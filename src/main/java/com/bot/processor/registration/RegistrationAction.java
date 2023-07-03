@@ -33,7 +33,6 @@ public class RegistrationAction implements Action {
     public MessageWrapper execute(Update update, TempObject tempObject, User user) {
         final String ACTION_NAME = "REGISTRATION";
         //Определяем шаг
-        //TODO переделаем на энам
         switch (tempObject.getOperation()) {
             case START -> {
                 //Выбор страны

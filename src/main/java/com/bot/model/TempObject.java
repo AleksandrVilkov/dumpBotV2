@@ -2,7 +2,10 @@ package com.bot.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -40,7 +43,11 @@ public class TempObject implements Cloneable {
     @Override
     public TempObject clone() {
         try {
-            return (TempObject) super.clone();
+            TempObject clone = (TempObject) super.clone();
+            if (this.getOption() != null) {
+                clone.setOption(this.getOption().clone());
+            }
+            return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
