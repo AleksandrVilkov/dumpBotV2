@@ -10,6 +10,7 @@ import com.bot.processor.cabinet.CabinetAction;
 import com.bot.processor.registration.RegistrationAction;
 import com.bot.processor.sale.SaleAction;
 import com.bot.processor.search.SearchAction;
+import com.bot.processor.statistic.StatisticAction;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,9 @@ public class Processor implements IProcessor {
     @Autowired
     AdminAction adminAction;
 
+    @Autowired
+    StatisticAction statisticAction;
+
     @Override
     public MessageWrapper startProcessing(Update update) {
         String userId = Util.getUserId(update);
@@ -52,7 +56,7 @@ public class Processor implements IProcessor {
                 result = startProcessingCallback(update, user);
             } else {
                 msg.setText("Выбери дейтсвие:");
-                List<ButtonWrapper> data = createMenuData(update,user);
+                List<ButtonWrapper> data = createMenuData(update, user);
                 msg.setReplyMarkup(Util.createKeyboardOneBtnLine(data));
                 result = MessageWrapper.builder().sendMessage(Collections.singletonList(msg)).
                         buttons(data).build();
@@ -111,6 +115,9 @@ public class Processor implements IProcessor {
                 }
                 case CABINET -> {
                     return cabinetAction.execute(update, tempObject, user);
+                }
+                case STATISTICS -> {
+                    return statisticAction.execute(update, tempObject, user);
                 }
                 default -> {
                     return CommonMsgs.createCommonError(update);

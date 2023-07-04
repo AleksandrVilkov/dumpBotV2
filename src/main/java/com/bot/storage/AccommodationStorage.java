@@ -48,6 +48,16 @@ public class AccommodationStorage implements IAccommodationStorage {
     }
 
     @Override
+    public List<UserAccommodation> getAllByUserId(int userId) {
+        List<UserAccommodationEntity> data = accommodationRepository.findAllByClientId(userId);
+        List<UserAccommodation> result = new ArrayList<>();
+        for (UserAccommodationEntity userAccommodationEntity : data) {
+            result.add((UserAccommodation) userAccommodationEntity.toModelObject());
+        }
+        return result;
+    }
+
+    @Override
     public List<UserAccommodation> getAllInconsistent() {
         List<UserAccommodationEntity> data = accommodationRepository.findAllByTopical(true);
         List<UserAccommodation> result = new ArrayList<>();

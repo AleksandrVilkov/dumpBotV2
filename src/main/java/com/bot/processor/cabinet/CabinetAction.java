@@ -4,11 +4,11 @@ import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
 import com.bot.processor.Action;
+import com.bot.processor.IAccommodationStorage;
 import com.bot.processor.ICarStorage;
 import com.bot.processor.IUserStorage;
 import com.bot.processor.common.CarOperation;
 import com.bot.processor.common.ProcessorUtil;
-import com.bot.processor.registration.RegistrationHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,9 +26,11 @@ import java.util.Map;
 public class CabinetAction implements Action {
     @Autowired
     ICarStorage carStorage;
-
     @Autowired
     IUserStorage userStorage;
+    @Autowired
+    IAccommodationStorage accommodationStorage;
+
 
     @Override
     public MessageWrapper execute(Update update, TempObject tempObject, User user) {
@@ -86,7 +88,17 @@ public class CabinetAction implements Action {
     }
 
     private MessageWrapper getMyAccommodation(User user, TempObject tempObject, Update update) {
-        return null;
+        List<UserAccommodation> accommodations = accommodationStorage.getAllByUserId(user.getId());
+        int allCount = accommodations.size();
+        StringBuilder text = new StringBuilder();
+        text.append("Всего подано ").append(allCount).append(" заявок. \n");
+        long rejected = accommodations.stream().filter(UserAccommodation::isRejected).count();
+        long topical = accommodations.stream().filter(UserAccommodation::isTopical).count();
+        long approved = accommodations.stream().filter(UserAccommodation::isApproved).count();
+        text.append("Из них еще не рассмотренно: ").append(topical).append("\n");
+        text.append("Одобрено: ").append(approved).append("\n");
+        text.append("Отклонено: ").append(rejected).append("\n");
+        return ProcessorUtil.createMessages(text.toString(), update);
     }
 
     private MessageWrapper editCar(User user, TempObject tempObject, Update update) {

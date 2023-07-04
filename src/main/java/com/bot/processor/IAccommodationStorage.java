@@ -10,6 +10,7 @@ public interface IAccommodationStorage {
     List<UserAccommodation> getAll();
 
     UserAccommodation getById(int id);
+    List<UserAccommodation> getAllByUserId(int userId);
 
     List<UserAccommodation> getAllInconsistent();
 
