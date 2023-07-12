@@ -1,6 +1,6 @@
 package com.bot.processor.admin;
 
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.processor.SubAction;
 import com.bot.processor.SubActionFactory;
 import com.bot.processor.admin.subActions.*;
@@ -13,22 +13,22 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class AdminSubActionFactory implements SubActionFactory {
     @Autowired
-    StartAdmin start;
+    private StartAdmin start;
     @Autowired
-    Approved approved;
+    private Approved approved;
     @Autowired
-    Rejected rejected;
+    private Rejected rejected;
     @Autowired
-    SendRejected sendRejected;
+    private SendRejected sendRejected;
     @Autowired
-    CommonEditRequest commonEditRequest;
+    private CommonEditRequest commonEditRequest;
     @Autowired
-    EditDescription editDescription;
+    private EditDescription editDescription;
 
     @Autowired
-    EnterNewDescription enterNewDescription;
+    private EnterNewDescription enterNewDescription;
     @Autowired
-    AdminError error;
+    private AdminError error;
 
     @Override
     public SubAction get(Operations operation) {
@@ -56,7 +56,7 @@ public class AdminSubActionFactory implements SubActionFactory {
                 return enterNewDescription;
             }
             default -> {
-               return error;
+                return error;
             }
         }
     }

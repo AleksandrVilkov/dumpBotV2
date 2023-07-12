@@ -2,7 +2,7 @@ package com.bot.processor.admin.subActions;
 
 import com.bot.common.Util;
 import com.bot.model.*;
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.processor.IAccommodationStorage;
 import com.bot.processor.ICarStorage;
 import com.bot.processor.SubAction;
@@ -23,9 +23,9 @@ import java.util.List;
 @Slf4j
 public class EnterNewDescription implements SubAction {
     @Autowired
-    IAccommodationStorage accommodationStorage;
+    private IAccommodationStorage accommodationStorage;
     @Autowired
-    ICarStorage carStorage;
+    private ICarStorage carStorage;
 
     @Override
     public void processPreviousStep(Update update, TempObject tempObject, User user) {

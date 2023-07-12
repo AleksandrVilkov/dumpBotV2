@@ -5,7 +5,7 @@ import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.Action;
 import com.bot.model.*;
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.processor.admin.AdminAction;
 import com.bot.processor.cabinet.CabinetAction;
 import com.bot.processor.registration.RegistrationAction;

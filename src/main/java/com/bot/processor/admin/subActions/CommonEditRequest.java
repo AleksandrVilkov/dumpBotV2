@@ -2,7 +2,7 @@ package com.bot.processor.admin.subActions;
 
 import com.bot.common.Util;
 import com.bot.model.*;
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.processor.SubAction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

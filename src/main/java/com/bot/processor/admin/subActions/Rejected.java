@@ -2,7 +2,7 @@ package com.bot.processor.admin.subActions;
 
 import com.bot.common.Util;
 import com.bot.model.MessageWrapper;
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.model.TempObject;
 import com.bot.model.User;
 import com.bot.processor.SubAction;

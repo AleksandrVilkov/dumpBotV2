@@ -18,7 +18,7 @@ import java.util.List;
 @Slf4j
 public class MyAccommodation implements SubAction {
     @Autowired
-    IAccommodationStorage accommodationStorage;
+    private IAccommodationStorage accommodationStorage;
 
     @Override
     public void processPreviousStep(Update update, TempObject tempObject, User user) {

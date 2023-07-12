@@ -2,7 +2,7 @@ package com.bot.processor.admin;
 
 import com.bot.common.Util;
 import com.bot.model.*;
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;

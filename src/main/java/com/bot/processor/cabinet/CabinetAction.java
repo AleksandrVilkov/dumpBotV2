@@ -15,7 +15,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @Slf4j
 public class CabinetAction implements Action {
     @Autowired
-    CabinetSubActionFactory cabinetSubActionFactory;
+    private CabinetSubActionFactory cabinetSubActionFactory;
 
     @Override
     public MessageWrapper execute(Update update, TempObject tempObject, User user) {

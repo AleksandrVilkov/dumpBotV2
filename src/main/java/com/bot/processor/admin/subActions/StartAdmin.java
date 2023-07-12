@@ -2,11 +2,12 @@ package com.bot.processor.admin.subActions;
 
 import com.bot.common.Util;
 import com.bot.model.*;
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.processor.IAccommodationStorage;
 import com.bot.processor.ICarStorage;
 import com.bot.processor.SubAction;
 import com.bot.processor.admin.AdminHelper;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -22,9 +23,10 @@ import java.util.List;
 @Slf4j
 public class StartAdmin implements SubAction {
     @Autowired
-    IAccommodationStorage accommodationStorage;
+    private IAccommodationStorage accommodationStorage;
     @Autowired
-    ICarStorage carStorage;
+    private ICarStorage carStorage;
+
     @Override
     public void processPreviousStep(Update update, TempObject tempObject, User user) {
 

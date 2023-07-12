@@ -1,10 +1,11 @@
 package com.bot.processor.cabinet;
 
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.processor.SubAction;
 import com.bot.processor.SubActionFactory;
 import com.bot.processor.cabinet.subActions.CabinetError;
 import com.bot.processor.cabinet.subActions.*;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,21 +13,21 @@ import org.springframework.stereotype.Component;
 public class CabinetSubActionFactory implements SubActionFactory {
 
     @Autowired
-    BrandSelection brandSelection;
+    private CabinetBrandSelection brandSelection;
     @Autowired
-    EditCar editCar;
+    private CabinetEditCar editCar;
     @Autowired
-    End end;
+    private End end;
     @Autowired
-    EngineSelection engineSelection;
+    private CabinetEngineSelection engineSelection;
     @Autowired
-    CabinetError error;
+    private CabinetError error;
     @Autowired
-    ModelSelection modelSelection;
+    private CabinetModelSelection modelSelection;
     @Autowired
-    MyAccommodation myAccommodation;
+    private MyAccommodation myAccommodation;
     @Autowired
-    StartCabinet start;
+    private StartCabinet start;
 
 
     @Override

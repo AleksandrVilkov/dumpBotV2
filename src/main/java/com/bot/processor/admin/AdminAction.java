@@ -19,7 +19,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class AdminAction implements Action {
-    final String ACTION_NAME = "ADMIN_QUERY_PROCESSING";
+    private final String ACTION_NAME = "ADMIN_QUERY_PROCESSING";
 
     @Autowired
     AdminSubActionFactory adminSubActionFactory;

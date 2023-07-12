@@ -12,7 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.Collections;
 
-import static com.bot.processor.oprations.Operations.ENTER_NEW_DESCRIPTION;
+import static com.bot.model.Operations.ENTER_NEW_DESCRIPTION;
 
 @Component
 @Slf4j

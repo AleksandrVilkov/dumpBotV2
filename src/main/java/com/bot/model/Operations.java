@@ -1,4 +1,4 @@
-package com.bot.processor.oprations;
+package com.bot.model;
 
 
 public enum Operations {

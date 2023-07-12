@@ -8,6 +8,7 @@ import com.bot.model.UserAccommodation;
 import com.bot.processor.IAccommodationStorage;
 import com.bot.processor.SubAction;
 import com.bot.processor.admin.AdminHelper;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,8 @@ import java.util.List;
 @Slf4j
 public class SendRejected implements SubAction {
     @Autowired
-    IAccommodationStorage accommodationStorage;
+    private IAccommodationStorage accommodationStorage;
+
     @Override
     public void processPreviousStep(Update update, TempObject tempObject, User user) {
 

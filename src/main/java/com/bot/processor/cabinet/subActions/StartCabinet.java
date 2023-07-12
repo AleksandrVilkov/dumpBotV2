@@ -2,7 +2,7 @@ package com.bot.processor.cabinet.subActions;
 
 import com.bot.common.Util;
 import com.bot.model.*;
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.processor.SubAction;
 import com.bot.processor.common.ProcessorUtil;
 import org.springframework.stereotype.Component;

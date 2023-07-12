@@ -3,7 +3,7 @@ package com.bot.processor.search;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.processor.Action;
 import com.bot.processor.IAccommodationStorage;
 import com.bot.processor.ICarStorage;

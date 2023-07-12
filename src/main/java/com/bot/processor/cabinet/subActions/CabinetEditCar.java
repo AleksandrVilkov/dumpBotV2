@@ -2,7 +2,7 @@ package com.bot.processor.cabinet.subActions;
 
 import com.bot.common.Util;
 import com.bot.model.*;
-import com.bot.processor.oprations.Operations;
+import com.bot.model.Operations;
 import com.bot.processor.ICarStorage;
 import com.bot.processor.SubAction;
 import com.bot.processor.common.CarOperation;
@@ -19,9 +19,9 @@ import java.util.Map;
 
 @Component
 @Slf4j
-public class EditCar implements SubAction {
+public class CabinetEditCar implements SubAction {
     @Autowired
-    ICarStorage carStorage;
+    private ICarStorage carStorage;
 
     @Override
     public void processPreviousStep(Update update, TempObject tempObject, User user) {

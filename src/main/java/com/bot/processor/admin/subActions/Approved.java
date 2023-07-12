@@ -11,6 +11,7 @@ import com.bot.processor.INotificationCenter;
 import com.bot.processor.IUserStorage;
 import com.bot.processor.SubAction;
 import com.bot.processor.admin.AdminHelper;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,13 +24,14 @@ import java.util.ArrayList;
 @Slf4j
 public class Approved implements SubAction {
     @Autowired
-    IAccommodationStorage accommodationStorage;
+    private IAccommodationStorage accommodationStorage;
     @Autowired
-    IUserStorage userStorage;
+    private IUserStorage userStorage;
     @Autowired
-    INotificationCenter notificationCenter;
+    private INotificationCenter notificationCenter;
     @Autowired
-    BotConfig config;
+    private BotConfig config;
+
     @Override
     public void processPreviousStep(Update update, TempObject tempObject, User user) {
         UserAccommodation userAccommodation = tempObject.getAdministrationData().getUserAccommodation();
