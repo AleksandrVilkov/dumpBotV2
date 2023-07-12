@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class Util {
 
@@ -83,5 +84,10 @@ public class Util {
         );
         inlineKeyboardMarkup.setKeyboard(keyboard);
         return inlineKeyboardMarkup;
+    }
+    public static boolean isOnlyNumber(String string) {
+        String regexp = "\\d+";
+        Pattern pattern = Pattern.compile(regexp);
+        return pattern.matcher(string).find();
     }
 }

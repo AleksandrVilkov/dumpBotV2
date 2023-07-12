@@ -21,6 +21,7 @@ public class TempObject implements Cloneable {
     private OptionData option;
     private Navigation navigation;
     private String description;
+    private int price;
     private AdministrationData administrationData;
     private List<String> deleteMsgsIdInNxtStep;
 

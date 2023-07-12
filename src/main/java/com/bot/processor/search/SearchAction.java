@@ -166,7 +166,7 @@ public class SearchAction implements Action {
 
     private MessageWrapper eighthStep(Update update, TempObject tempObject, User user) {
         TempObject newTemp = tempObject.clone();
-        return PhotoOperation.addPhoto(user, update, newTemp);
+        return PhotoOperation.addPhoto(user, update, newTemp, Operation.DESCRIPTION);
     }
 
     private MessageWrapper ninthStep(Update update, TempObject tempObject, User user) {

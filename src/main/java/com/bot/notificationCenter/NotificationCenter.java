@@ -44,6 +44,11 @@ public class NotificationCenter implements INotificationCenter {
             stringBuilder.append("Куплю: ");
         }
         stringBuilder.append(userAccommodation.getDescription()).append(SEPARATOR);
+
+        if (userAccommodation.getType().equals(AccommodationType.SALE)) {
+            stringBuilder.append("Цена: ").append(userAccommodation.getPrice()).append(SEPARATOR);
+        }
+
         if (userAccommodation.getCarsId() != null && !userAccommodation.getCarsId().isEmpty()) {
             stringBuilder.append("Подходит к автомобилям: ");
             for (String id : userAccommodation.getCarsId()) {

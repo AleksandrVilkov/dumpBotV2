@@ -6,14 +6,11 @@ import org.telegram.telegrambots.meta.api.objects.PhotoSize;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PhotoOperation {
 
-    public static MessageWrapper addPhoto(User user, Update update, TempObject tempObject) {
+    public static MessageWrapper addPhoto(User user, Update update, TempObject tempObject, Operation nextOperation) {
         String text;
         if (user.isWaitingMessages()) {
             List<PhotoSize> photoSizes = update.getMessage().getPhoto();
@@ -33,7 +30,7 @@ public class PhotoOperation {
             text = "Отлично. Если есть еще фото - дай их мне. Если нет - нажми кнопку " + buttonName;
             List<ButtonWrapper> data = new ArrayList<>();
             TempObject newTemp = tempObject.clone();
-            newTemp.setOperation(Operation.DESCRIPTION);
+            newTemp.setOperation(nextOperation);
             data.add(new ButtonWrapper(buttonName, Util.generateToken(newTemp), newTemp));
             return ProcessorUtil.createMessages(text, update, data).addTemp(keyForPhotoElse, tempObject);
         } else {

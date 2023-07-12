@@ -50,11 +50,14 @@ public class AdminAction implements Action {
                 return sendRejected(update, tempObject, user);
             }
             case EDIT_REQUEST -> {
-                return edit(update, tempObject);
+                return commonEdit(update, tempObject);
             }
             case EDIT_DESCRIPTION -> {
                 return editDescription(update, tempObject, user);
             }
+//            case EDIT_CAR -> {
+//                return commonEditCars(update, tempObject, user);
+//            }
             case ENTER_NEW_DESCRIPTION -> {
                 return saveNewDescription(update, tempObject, user);
             }
@@ -89,6 +92,7 @@ public class AdminAction implements Action {
                 .leaveOldMessages(true).build().addTemp(key, tempObject);
     }
 
+
     private MessageWrapper approved(Update update, TempObject tempObject) {
         UserAccommodation userAccommodation = tempObject.getAdministrationData().getUserAccommodation();
         accommodationStorage.saveAccommodation(AdminHelper.approveAccommodation(userAccommodation));
@@ -109,17 +113,28 @@ public class AdminAction implements Action {
     }
 
 
-    private MessageWrapper edit(Update update, TempObject tempObject) {
-        String text = "Изменить описание";
-        TempObject newTemp = tempObject.clone();
-        newTemp.setOperation(Operation.EDIT_DESCRIPTION);
-        ButtonWrapper buttonWrapper = new ButtonWrapper(text, Util.generateToken(newTemp), newTemp);
-        ReplyKeyboard keyboard = Util.createKeyboardOneBtnLine(Collections.singletonList(buttonWrapper));
+    private MessageWrapper commonEdit(Update update, TempObject tempObject) {
+        TempObject editDescription = tempObject.clone();
+        editDescription.setOperation(Operation.EDIT_DESCRIPTION);
+        ButtonWrapper buttonEditDescription = new ButtonWrapper("Изменить описание", Util.generateToken(editDescription), editDescription);
+
+        TempObject editEngine = tempObject.clone();
+        editEngine.setOperation(Operation.EDIT_DESCRIPTION);
+        ButtonWrapper buttonEditEngine = new ButtonWrapper("Удалить двигатели", Util.generateToken(editEngine), editEngine);
+
+
+        TempObject deleteCar = tempObject.clone();
+        editEngine.setOperation(Operation.DELETE_CAR);
+        ButtonWrapper buttonDeleteCar = new ButtonWrapper("Удалить машину", Util.generateToken(deleteCar), deleteCar);
+
+
+        List<ButtonWrapper> buttons = List.of(buttonEditDescription, buttonEditEngine, buttonDeleteCar);
+        ReplyKeyboard keyboard = Util.createKeyboardOneBtnLine(buttons);
         SendMessage sendMessage = new SendMessage(Util.getUserId(update), "Выбери, что именно изменить:");
         sendMessage.setReplyMarkup(keyboard);
         return MessageWrapper.builder()
                 .sendMessage(Collections.singletonList(sendMessage)).leaveOldMessages(true)
-                .buttons(Collections.singletonList(buttonWrapper)).build();
+                .buttons(buttons).build();
     }
 
     private MessageWrapper rejected(Update update, TempObject tempObject, User user) {

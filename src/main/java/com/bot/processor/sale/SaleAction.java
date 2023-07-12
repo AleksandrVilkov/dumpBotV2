@@ -60,6 +60,10 @@ public class SaleAction implements Action {
                 log.info("Start PHOTO " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return seventhStep(update, tempObject, user);
             }
+            case ENTER_PRICE -> {
+                log.info("Start ENTER_PRICE " + ACTION_NAME + " step for user " + Util.getUserId(update));
+                return enterPrice(update,tempObject,user);
+            }
             case DESCRIPTION -> {
                 log.info("Start DESCRIPTION " + ACTION_NAME + " step for user " + Util.getUserId(update));
                 return eighthStep(update, tempObject, user);
@@ -73,6 +77,18 @@ public class SaleAction implements Action {
                 return CommonMsgs.createCommonError(update);
             }
         }
+    }
+
+    private MessageWrapper enterPrice(Update update, TempObject tempObject, User user) {
+        String text = "Укажи цену:";
+        TempObject newTemp = tempObject.clone();
+        newTemp.setOperation(Operation.DESCRIPTION);
+        user.setWaitingMessages(true);
+        String key = Util.generateToken(newTemp);
+        user.setLastCallback(key);
+        MessageWrapper messageWrapper = ProcessorUtil.createMessages(text, update);
+        messageWrapper.addTemp(key, newTemp);
+        return messageWrapper;
     }
 
     private MessageWrapper firstStep(Update update, TempObject tempObject) {
@@ -142,16 +158,21 @@ public class SaleAction implements Action {
 
     private MessageWrapper seventhStep(Update update, TempObject tempObject, User user) {
         TempObject newTemp = tempObject.clone();
-        return PhotoOperation.addPhoto(user, update, newTemp);
+        return PhotoOperation.addPhoto(user, update, newTemp, Operation.ENTER_PRICE);
     }
 
     private MessageWrapper eighthStep(Update update, TempObject tempObject, User user) {
-        String text = "Укажи описание к объявлению. Опиши товар, не забудь обязательно указать цену! Пиши так, что бы твой товар захотели купить!";
+        String price = update.getMessage().getText();
+        if (!Util.isOnlyNumber(price)) {
+            return ProcessorUtil.createMessages("Допустимо вводить только цифры. Укажи цену еще раз:", update);
+        }
         TempObject newTemp = tempObject.clone();
+        newTemp.setPrice(Integer.parseInt(price));
         newTemp.setOperation(Operation.END);
         user.setWaitingMessages(true);
         String key = Util.generateToken(newTemp);
         user.setLastCallback(key);
+        String text = "Укажи описание к объявлению. Опиши товар, не забудь обязательно указать цену! Пиши так, что бы твой товар захотели купить!";
         MessageWrapper messageWrapper = ProcessorUtil.createMessages(text, update);
         messageWrapper.addTemp(key, newTemp);
         return messageWrapper;
@@ -168,6 +189,7 @@ public class SaleAction implements Action {
                 .approved(false)
                 .rejected(false)
                 .topical(true)
+                .price(tempObject.getPrice())
                 .description(description)
                 .photos(newTemp.getSelectedData().getPhotos())
                 .carsId(CarOperation.getCarsId(tempObject.getSelectedData().getCars()))

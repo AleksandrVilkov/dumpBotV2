@@ -85,6 +85,11 @@ public class AdminHelper {
                 .append("Описание: ").append(userAccommodation.getDescription()).append(SEPARATOR)
                 .append("Автор: @").append(user.getUserName()).append(SEPARATOR)
                 .append("Тип запроса: ").append(userAccommodation.getType().name()).append(SEPARATOR);
+        if (userAccommodation.getType().equals(AccommodationType.SALE)) {
+            stringBuilder.append("Цена: ")
+                    .append(userAccommodation.getPrice() == 0 ? "НЕ УКАЗАНА" : userAccommodation.getPrice())
+                    .append(SEPARATOR);
+        }
         if (userAccommodation.getCarsId() != null && !userAccommodation.getCarsId().isEmpty()) {
             stringBuilder.append("Указаны автомобили: ");
             cars.forEach(car ->
