@@ -3,6 +3,7 @@ package com.bot.processor.search;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
+import com.bot.processor.oprations.Operations;
 import com.bot.processor.Action;
 import com.bot.processor.IAccommodationStorage;
 import com.bot.processor.ICarStorage;
@@ -82,7 +83,7 @@ public class SearchAction implements Action {
     private MessageWrapper firstStep(Update update, TempObject tempObject) {
         String text = "Давай разместим запрос на поиск. Нажми кнопку \"Начать\"";
         TempObject newTemp = tempObject.clone();
-        newTemp.setOperation(Operation.NEED_CAR);
+        newTemp.setOperation(Operations.NEED_CAR);
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(Util.getUserId(update));
         List<ButtonWrapper> data = new ArrayList<>();
@@ -94,14 +95,14 @@ public class SearchAction implements Action {
         String text = "Хочешь указать пренадлежность детали к автомобилю? Если указать - то большее количество пользователей получат уведомление, и шанс найти то что ты ищешь - возрастает.";
 
         TempObject newTemp = tempObject.clone();
-        newTemp.setOperation(Operation.CONCERN_SELECTION);
+        newTemp.setOperation(Operations.CONCERN_SELECTION);
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(Util.getUserId(update));
         List<ButtonWrapper> data = new ArrayList<>();
         data.add(new ButtonWrapper("Указать авто", Util.generateToken(newTemp), newTemp));
 
         TempObject newTempNoCar = tempObject.clone();
-        newTempNoCar.setOperation(Operation.PRE_PHOTO);
+        newTempNoCar.setOperation(Operations.PRE_PHOTO);
         data.add(new ButtonWrapper("Не указывать", Util.generateToken(newTempNoCar), newTempNoCar));
         return ProcessorUtil.createMessages(text, update, data);
     }
@@ -125,19 +126,19 @@ public class SearchAction implements Action {
                     }
                 }
         );
-        return CarOperation.chooseConcern(update, tempObject, cars, Operation.BRAND_SELECTION);
+        return CarOperation.chooseConcern(update, tempObject, cars, Operations.BRAND_SELECTION);
     }
 
     private MessageWrapper fourthStep(Update update, TempObject tempObject) {
-        return CarOperation.chooseBrand(update, tempObject, Operation.MODEL_SELECTION);
+        return CarOperation.chooseBrand(update, tempObject, Operations.MODEL_SELECTION);
     }
 
     private MessageWrapper fifthStep(Update update, TempObject tempObject) {
-        return CarOperation.chooseModel(update, tempObject, Operation.ENGINE_SELECTION);
+        return CarOperation.chooseModel(update, tempObject, Operations.ENGINE_SELECTION);
     }
 
     private MessageWrapper sixthStep(Update update, TempObject tempObject) {
-        return CarOperation.chooseEngine(update, tempObject, Operation.PRE_PHOTO);
+        return CarOperation.chooseEngine(update, tempObject, Operations.PRE_PHOTO);
     }
 
     private MessageWrapper seventhStep(Update update, TempObject tempObject) {
@@ -148,31 +149,31 @@ public class SearchAction implements Action {
             ProcessorUtil.confirmCarSelection(tempObject);
             text = "Отлично. Автомобиль " + car.getBrand() + " " + car.getModel() + "(" + car.getEngine() + ")" + "успешно выбран. \n Что дальше?";
             TempObject tempCarElse = tempObject.clone();
-            tempCarElse.setOperation(Operation.CONCERN_SELECTION);
+            tempCarElse.setOperation(Operations.CONCERN_SELECTION);
             data.add(new ButtonWrapper("Добавить авто", Util.generateToken(tempCarElse), tempCarElse));
 
         } else {
             text = "Хорошо, продолжим без указания авто. Давай решим, будем мы прикладывать фото искомой запчасти? Имей ввиду, это так же повысит возможность найти то, что ты ищешь";
         }
         TempObject tempPhoto = tempObject.clone();
-        tempPhoto.setOperation(Operation.PHOTO);
+        tempPhoto.setOperation(Operations.PHOTO);
         data.add(new ButtonWrapper("Добавить фото", Util.generateToken(tempPhoto), tempPhoto));
 
         TempObject tempNoPhoto = tempObject.clone();
-        tempNoPhoto.setOperation(Operation.DESCRIPTION);
+        tempNoPhoto.setOperation(Operations.DESCRIPTION);
         data.add(new ButtonWrapper("Без фото", Util.generateToken(tempNoPhoto), tempNoPhoto));
         return ProcessorUtil.createMessages(text, update, data);
     }
 
     private MessageWrapper eighthStep(Update update, TempObject tempObject, User user) {
         TempObject newTemp = tempObject.clone();
-        return PhotoOperation.addPhoto(user, update, newTemp, Operation.DESCRIPTION);
+        return PhotoOperation.addPhoto(user, update, newTemp, Operations.DESCRIPTION);
     }
 
     private MessageWrapper ninthStep(Update update, TempObject tempObject, User user) {
         String text = "Опиши то, что ты ищешь:";
         TempObject newTemp = tempObject.clone();
-        newTemp.setOperation(Operation.END);
+        newTemp.setOperation(Operations.END);
         user.setWaitingMessages(true);
         String key = Util.generateToken(newTemp);
         user.setLastCallback(key);

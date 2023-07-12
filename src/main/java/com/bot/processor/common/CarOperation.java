@@ -2,6 +2,7 @@ package com.bot.processor.common;
 
 import com.bot.common.Util;
 import com.bot.model.*;
+import com.bot.processor.oprations.Operations;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -9,7 +10,7 @@ import java.util.*;
 
 @Component
 public class CarOperation {
-    public static MessageWrapper chooseEngine(Update update, TempObject tempObject, Operation step) {
+    public static MessageWrapper chooseEngine(Update update, TempObject tempObject, Operations step) {
         String text = "Укажи двигатель:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -30,7 +31,7 @@ public class CarOperation {
         return ProcessorUtil.createMessages(text, update, data);
     }
 
-    public static MessageWrapper chooseModel(Update update, TempObject tempObject, Operation step) {
+    public static MessageWrapper chooseModel(Update update, TempObject tempObject, Operations step) {
         String text = "Теперь выбери модель:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -51,7 +52,7 @@ public class CarOperation {
         return ProcessorUtil.createMessages(text, update, data);
     }
 
-    public static MessageWrapper chooseBrand(Update update, TempObject tempObject, Operation step) {
+    public static MessageWrapper chooseBrand(Update update, TempObject tempObject, Operations step) {
         String text = "Теперь выбери бренд:";
 
         Map<String, List<Car>> result = new HashMap<>();
@@ -72,7 +73,7 @@ public class CarOperation {
         return ProcessorUtil.createMessages(text, update, data);
     }
 
-    public static MessageWrapper chooseConcern(Update update, TempObject tempObject, List<Car> cars, Operation step) {
+    public static MessageWrapper chooseConcern(Update update, TempObject tempObject, List<Car> cars, Operations step) {
         String text = "Выбери концерн, к которому относится твой автомобиль:";
         Map<String, List<Car>> carByConcern = new HashMap<>();
         cars.forEach(
@@ -103,7 +104,7 @@ public class CarOperation {
 
     private static List<ButtonWrapper> getCarData(TempObject tempObject,
                                                   Map<String, List<Car>> data,
-                                                  Operation step) {
+                                                  Operations step) {
         List<ButtonWrapper> result = new ArrayList<>();
 
         data.forEach((key, value) -> {

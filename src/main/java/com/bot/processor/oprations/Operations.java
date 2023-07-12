@@ -1,6 +1,8 @@
-package com.bot.model;
+package com.bot.processor.oprations;
 
-public enum Operation {
+
+public enum Operations {
+    ERROR,
     //main
     START,   END,
     CITY_SELECTION,

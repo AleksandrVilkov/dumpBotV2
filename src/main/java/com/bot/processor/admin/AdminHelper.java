@@ -2,6 +2,7 @@ package com.bot.processor.admin;
 
 import com.bot.common.Util;
 import com.bot.model.*;
+import com.bot.processor.oprations.Operations;
 import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
@@ -67,7 +68,7 @@ public class AdminHelper {
         return !(userAccommodation.getPhotos() != null && userAccommodation.getPhotos().isEmpty());
     }
 
-    public static TempObject getTempForButton(TempObject oldObject, Operation operation, ActionOnRequest action, UserAccommodation userAccommodation) {
+    public static TempObject getTempForButton(TempObject oldObject, Operations operation, ActionOnRequest action, UserAccommodation userAccommodation) {
         TempObject tempObject = oldObject.clone();
         tempObject.setOperation(operation);
         AdministrationData approvedData = new AdministrationData();

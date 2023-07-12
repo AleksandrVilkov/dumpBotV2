@@ -3,6 +3,7 @@ package com.bot.processor.sale;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
+import com.bot.processor.oprations.Operations;
 import com.bot.processor.Action;
 import com.bot.processor.IAccommodationStorage;
 import com.bot.processor.ICarStorage;
@@ -82,7 +83,7 @@ public class SaleAction implements Action {
     private MessageWrapper enterPrice(Update update, TempObject tempObject, User user) {
         String text = "Укажи цену:";
         TempObject newTemp = tempObject.clone();
-        newTemp.setOperation(Operation.DESCRIPTION);
+        newTemp.setOperation(Operations.DESCRIPTION);
         user.setWaitingMessages(true);
         String key = Util.generateToken(newTemp);
         user.setLastCallback(key);
@@ -94,7 +95,7 @@ public class SaleAction implements Action {
     private MessageWrapper firstStep(Update update, TempObject tempObject) {
         String text = "Давай разместим с тобой объявление. Нужно будет указать машины, на которые подходит деталь, приложить фото, указать описание и цену. Нажми на кнопку начать:";
         TempObject newTemp = tempObject.clone();
-        newTemp.setOperation(Operation.CONCERN_SELECTION);
+        newTemp.setOperation(Operations.CONCERN_SELECTION);
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(Util.getUserId(update));
         List<ButtonWrapper> data = new ArrayList<>();
@@ -121,19 +122,19 @@ public class SaleAction implements Action {
                     }
                 }
         );
-        return CarOperation.chooseConcern(update, tempObject, cars, Operation.BRAND_SELECTION);
+        return CarOperation.chooseConcern(update, tempObject, cars, Operations.BRAND_SELECTION);
     }
 
     private MessageWrapper thirdStep(Update update, TempObject tempObject) {
-        return CarOperation.chooseBrand(update, tempObject, Operation.MODEL_SELECTION);
+        return CarOperation.chooseBrand(update, tempObject, Operations.MODEL_SELECTION);
     }
 
     private MessageWrapper fourthStep(Update update, TempObject tempObject) {
-        return CarOperation.chooseModel(update, tempObject, Operation.ENGINE_SELECTION);
+        return CarOperation.chooseModel(update, tempObject, Operations.ENGINE_SELECTION);
     }
 
     private MessageWrapper fifthStep(Update update, TempObject tempObject) {
-        return CarOperation.chooseEngine(update, tempObject, Operation.PRE_PHOTO);
+        return CarOperation.chooseEngine(update, tempObject, Operations.PRE_PHOTO);
     }
 
     private MessageWrapper sixthStep(Update update, TempObject tempObject) {
@@ -147,10 +148,10 @@ public class SaleAction implements Action {
 
         List<ButtonWrapper> data = new ArrayList<>();
         TempObject tempCarElse = tempObject.clone();
-        tempCarElse.setOperation(Operation.CONCERN_SELECTION);
+        tempCarElse.setOperation(Operations.CONCERN_SELECTION);
 
         TempObject tempPhoto = tempObject.clone();
-        tempPhoto.setOperation(Operation.PHOTO);
+        tempPhoto.setOperation(Operations.PHOTO);
         data.add(new ButtonWrapper("Добавить фото", Util.generateToken(tempPhoto), tempPhoto));
         data.add(new ButtonWrapper("Добавить авто", Util.generateToken(tempCarElse), tempCarElse));
         return ProcessorUtil.createMessages(text, update, data);
@@ -158,7 +159,7 @@ public class SaleAction implements Action {
 
     private MessageWrapper seventhStep(Update update, TempObject tempObject, User user) {
         TempObject newTemp = tempObject.clone();
-        return PhotoOperation.addPhoto(user, update, newTemp, Operation.ENTER_PRICE);
+        return PhotoOperation.addPhoto(user, update, newTemp, Operations.ENTER_PRICE);
     }
 
     private MessageWrapper eighthStep(Update update, TempObject tempObject, User user) {
@@ -168,7 +169,7 @@ public class SaleAction implements Action {
         }
         TempObject newTemp = tempObject.clone();
         newTemp.setPrice(Integer.parseInt(price));
-        newTemp.setOperation(Operation.END);
+        newTemp.setOperation(Operations.END);
         user.setWaitingMessages(true);
         String key = Util.generateToken(newTemp);
         user.setLastCallback(key);

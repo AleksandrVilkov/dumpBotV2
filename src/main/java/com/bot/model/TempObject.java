@@ -1,5 +1,7 @@
 package com.bot.model;
 
+
+import com.bot.processor.oprations.Operations;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
@@ -16,7 +18,7 @@ import java.util.List;
 public class TempObject implements Cloneable {
     private Action action;
     private String userId;
-    private Operation operation;
+    private Operations operation;
     private SelectedData selectedData;
     private OptionData option;
     private Navigation navigation;

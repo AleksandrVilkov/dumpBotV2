@@ -3,6 +3,7 @@ package com.bot.processor.registration;
 import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.*;
+import com.bot.processor.oprations.Operations;
 import com.bot.processor.Action;
 import com.bot.processor.ICarStorage;
 import com.bot.processor.IRegionStorage;
@@ -85,7 +86,7 @@ public class RegistrationAction implements Action {
             OptionData optionData = new OptionData();
             optionData.setCountryCode(c);
             newTemp.setOption(optionData);
-            newTemp.setOperation(Operation.CITY_SELECTION);
+            newTemp.setOperation(Operations.CITY_SELECTION);
             buttons.add(new ButtonWrapper(c, Util.generateToken(newTemp), newTemp));
         }
         MessageWrapper messageWrapper = ProcessorUtil.createMessages(text, update, buttons);
@@ -137,19 +138,19 @@ public class RegistrationAction implements Action {
                     }
                 }
         );
-        return CarOperation.chooseConcern(update, tempObject, cars, Operation.BRAND_SELECTION);
+        return CarOperation.chooseConcern(update, tempObject, cars, Operations.BRAND_SELECTION);
     }
 
     private MessageWrapper fourthStep(Update update, TempObject tempObject) {
-        return CarOperation.chooseBrand(update, tempObject, Operation.MODEL_SELECTION);
+        return CarOperation.chooseBrand(update, tempObject, Operations.MODEL_SELECTION);
     }
 
     private MessageWrapper fifthStep(Update update, TempObject tempObject) {
-        return CarOperation.chooseModel(update, tempObject, Operation.ENGINE_SELECTION);
+        return CarOperation.chooseModel(update, tempObject, Operations.ENGINE_SELECTION);
     }
 
     private MessageWrapper sixthStep(Update update, TempObject tempObject) {
-        return CarOperation.chooseEngine(update, tempObject, Operation.END);
+        return CarOperation.chooseEngine(update, tempObject, Operations.END);
     }
 
     private MessageWrapper seventhStep(Update update, TempObject tempObject) {
@@ -173,7 +174,7 @@ public class RegistrationAction implements Action {
         for (Region region : regions) {
             TempObject newTemp = tempObject.clone();
             newTemp.getOption().setRegion(region);
-            newTemp.setOperation(Operation.CONCERN_SELECTION);
+            newTemp.setOperation(Operations.CONCERN_SELECTION);
             String key = Util.generateToken(newTemp);
             res.add(new ButtonWrapper(region.getName(), key, newTemp));
         }

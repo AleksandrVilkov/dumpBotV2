@@ -5,6 +5,7 @@ import com.bot.common.CommonMsgs;
 import com.bot.common.Util;
 import com.bot.model.Action;
 import com.bot.model.*;
+import com.bot.processor.oprations.Operations;
 import com.bot.processor.admin.AdminAction;
 import com.bot.processor.cabinet.CabinetAction;
 import com.bot.processor.registration.RegistrationAction;
@@ -174,7 +175,7 @@ public class Processor implements IProcessor {
     private TempObject getTemp(Update update, Action action) {
         return TempObject.builder()
                 .userId(Util.getUserId(update))
-                .operation(Operation.START)
+                .operation(Operations.START)
                 .action(action).build();
     }
 

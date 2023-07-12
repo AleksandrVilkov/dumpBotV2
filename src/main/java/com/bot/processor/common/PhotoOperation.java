@@ -2,6 +2,7 @@ package com.bot.processor.common;
 
 import com.bot.common.Util;
 import com.bot.model.*;
+import com.bot.processor.oprations.Operations;
 import org.telegram.telegrambots.meta.api.objects.PhotoSize;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -10,7 +11,7 @@ import java.util.List;
 
 public class PhotoOperation {
 
-    public static MessageWrapper addPhoto(User user, Update update, TempObject tempObject, Operation nextOperation) {
+    public static MessageWrapper addPhoto(User user, Update update, TempObject tempObject, Operations nextOperation) {
         String text;
         if (user.isWaitingMessages()) {
             List<PhotoSize> photoSizes = update.getMessage().getPhoto();
