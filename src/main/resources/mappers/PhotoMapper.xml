@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bot.mappers.PhotoMapper">
+
+    <resultMap id ="PhotoMap" type="com.bot.model.domain.Photo">
+        <result column="telegram_user_id" property="telegramUserId"/>
+        <result column="telegram_photo_id" property="photoId"/>
+        <result column="request_id" property="requestId"/>
+    </resultMap>
+
+    <insert id="saveUserPhoto" parameterType="map">
+        insert into user_photo(telegram_user_id, telegram_photo_id, request_id)
+        values(#{photo.telegramUserId},#{photo.photoId},#{photo.requestId})
+    </insert>
+
+    <select id="existsPhotosByRequestId" parameterType="map" resultType="java.lang.Boolean">
+        select exists (
+        select 1
+        from user_photo
+        where request_id = #{requestId}
+        )
+    </select>
+
+    <select id="findByRequestId" parameterType="map" resultType="com.bot.model.domain.Photo" resultMap="PhotoMap">
+       select telegram_user_id, telegram_photo_id, request_id
+        from user_photo
+        where request_id = #{requestId}
+    </select>
+</mapper>

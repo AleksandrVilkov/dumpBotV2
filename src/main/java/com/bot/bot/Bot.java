@@ -1,40 +1,44 @@
 package com.bot.bot;
 
-import com.bot.common.Util;
-import com.bot.model.MessageWrapper;
-import com.bot.processor.ITempStorage;
+import com.bot.config.BotConfig;
+import com.bot.enums.ChatMemberStatus;
+import com.bot.enums.State;
+import com.bot.mappers.UserMapper;
+import com.bot.model.domain.BotUser;
+import com.bot.model.domain.IncomingData;
+import com.bot.model.domain.Message;
+import com.bot.model.domain.UserState;
+import com.bot.states.BaseState;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.ActionType;
-import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Getter
 @Setter
 @NoArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Bot extends TelegramLongPollingBot {
     @Autowired
     BotConfig config;
     @Autowired
-    IProcessor processor;
+    UserMapper userMapper;
     @Autowired
-    ITempStorage tempStorage;
+    Map<State, BaseState> stateStrategy;
 
     @Override
     public String getBotUsername() {
@@ -46,116 +50,82 @@ public class Bot extends TelegramLongPollingBot {
         return config.getToken();
     }
 
-    /**
-     * Получаем update, показываем что бот что то печатает.
-     * Проверяем, подписал ли человек на канал. Если не подписан - даем ошибку что надо бы подписаться.
-     * Запускаем процесс, на выходе получаем MessageWrapper.
-     * Сохраняем временные файлы. (Кнопки, и все что есть во временных данных.
-     * Отправляем результат процесса, удаляем старые сообщения
-     */
-
     @Override
     public void onUpdateReceived(Update update) {
-        //Отправим анимацию "Печатает..."
-        sendTyping(update);
-
-        MessageWrapper msgs;
-        if (Validator.validateUser(update, this, config)) {
-            msgs = processor.startProcessing(update);
+        var botUser = BotUser.fromTgUser(findTgUserInUpdate(update));
+        log.info("От пользователя " + botUser.getId() + "поступил апдейт");
+        if (isSubscriptions(botUser)) {
+            handle(botUser, update);
         } else {
-            msgs = createValidationError(update);
-            log.warn("user validate error");
+            log.warn("Пользователь "+ update.getMessage().getChatId().toString() +"не подписан на канал");
+            send(new Message(update.getMessage().getChatId().toString(), "Сначала подпишсь на канал!"));
         }
-        saveTemp(msgs);
-        List<Message> newSendingMessages = sendMsgs(msgs);
-        processHistory(newSendingMessages, msgs, update);
     }
 
-    private void processHistory(List<Message> newSendingMessages, MessageWrapper msgs, Update update) {
-        List<String> msgsId = new ArrayList<>();
-        newSendingMessages.forEach(message -> msgsId.add(String.valueOf(message.getMessageId())));
-        String key = "deleteMessageFor" + Util.getUserId(update);
-        List<String> deleting = tempStorage.getList(key);
-        if (msgs.isLeaveOldMessages()) {
-            msgsId.addAll(deleting);
-        } else {
-            deleteOldMessage(deleting, update);
-        }
-        tempStorage.setList(key, msgsId);
-    }
-
-    private void sendTyping(Update update) {
+    private void handle(BotUser botUser, Update update) {
         try {
-            SendChatAction chatAction = new SendChatAction();
-            chatAction.setAction(ActionType.TYPING);
-            chatAction.setChatId(Util.getUserId(update));
-            execute(chatAction);
-        } catch (TelegramApiException e) {
-            log.warn(e.getMessage());
-        }
-    }
+            var userState = userMapper.getUserState(botUser.getId()).
+                    orElse(UserState.builder()
+                            .state(State.NONE)
+                            .telegramId(botUser.getTelegramLogin()).build());
 
-    private void saveTemp(MessageWrapper msgs) {
-        if (msgs.getTemp() != null) {
-            msgs.getTemp().forEach((key, value) -> tempStorage.set(key, value.toString()));
-        }
-        if (msgs.getButtons() != null) {
-            msgs.getButtons().forEach(b -> tempStorage.set(b.getKey(), b.getTempObject().toString()));
-        }
-    }
+            var state = stateStrategy.get(userState.getState());
+            log.info("Состояние пользователя " + botUser.getId() + "- " + state.toString());
+            var incomingData = IncomingData.fromUpdate(update);
 
-    private void deleteOldMessage(List<String> deleting, Update update) {
-        String userId = Util.getUserId(update);
-        deleting.forEach(msgId -> {
-            try {
-                DeleteMessage deleteMessage = new DeleteMessage(userId, Integer.parseInt(msgId));
-                log.info(" Message id " + msgId + " was deleted for user " + userId);
-                execute(deleteMessage);
-            } catch (Exception e) {
-                log.warn("Unable to delete message for user " + userId + ". Message id " + msgId + " does not exist");
+            List<Message> msgs;
+
+            if (!incomingData.getCommands().isEmpty()) {
+                msgs = state.handleCommands(botUser, incomingData.getCommands());
+            } else {
+                msgs = state.execute(botUser, IncomingData.fromUpdate(update));
             }
-        });
 
-        int currentId = Util.getMessageId(update);
-        try {
-            DeleteMessage deleteMessage = new DeleteMessage(userId, currentId);
-            log.info("Current message with ID " + currentId + " was deleted for user " + userId);
-            execute(deleteMessage);
+            msgs.forEach(this::send);
+
         } catch (Exception e) {
-            log.warn("Unable to delete message for user " + userId + ". Message id " + currentId + " does not exist");
+            send(new Message(update.getMessage().getChatId().toString(),
+                    "Простите, произошло недоразумение:\n" + e.getMessage()));
+
         }
+
     }
 
-    private List<Message> sendMsgs(MessageWrapper msgs) {
-        List<Message> newMessages = new ArrayList<>();
-
+    private void send(Message message) {
         try {
-            if (msgs.getSendMediaGroup() != null) {
-                List<Message> execute = execute(msgs.getSendMediaGroup());
-                newMessages.addAll(execute);
+            if (message.withMedia())
+                execute(message.getBotMediaMessage());
+
+            if (message.withOnePhoto()) {
+                execute(message.getBotTextMessageWithPhoto());
+            } else {
+                execute(message.getBotTextMessage());
             }
-            if (msgs.getSendPhoto() != null) {
-                Message message = execute(msgs.getSendPhoto());
-                newMessages.add(message);
-            }
-            if (msgs.getSendMessage() != null && !msgs.getSendMessage().isEmpty()) {
-                for (SendMessage sendMessage : msgs.getSendMessage()) {
-                    Message execute = execute(sendMessage);
-                    newMessages.add(execute);
-                }
-            }
+
         } catch (TelegramApiException e) {
             log.error(e.getMessage());
+            throw new RuntimeException(e);
         }
-        return newMessages;
     }
 
-
-    private MessageWrapper createValidationError(Update update) {
-        return MessageWrapper.builder().sendMessage(Collections.singletonList(
-                new SendMessage(String.valueOf(update.getMessage().getFrom().getId()),
-                        "Ты не подписан на канал!"))).build();
+    private User findTgUserInUpdate(Update update) {
+        if (update.getMessage() != null) {
+            return update.getMessage().getFrom();
+        }
+        throw new RuntimeException("Не удалось найти пользователя");
     }
 
+    public boolean isSubscriptions(BotUser botUser) {
+        GetChatMember chatMember = new GetChatMember();
+        chatMember.setUserId(Long.valueOf(botUser.getId()));
+        chatMember.setChatId(String.valueOf(config.getValidateData().getChannelID()));
+        try {
+            String status = execute(chatMember).getStatus();
+            return !status.equalsIgnoreCase(ChatMemberStatus.KICKED.getName())
+                    && !status.equalsIgnoreCase(ChatMemberStatus.LEFT.getName());
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
 

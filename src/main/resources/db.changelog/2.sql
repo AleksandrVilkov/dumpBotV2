@@ -1,0 +1,1 @@
+ALTER TABLE user_state ADD CONSTRAINT telegram_id UNIQUE (telegram_id);

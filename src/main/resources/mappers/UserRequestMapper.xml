@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bot.mappers.UserRequestMapper">
+
+    <resultMap id="userRequestMap" type="com.bot.model.domain.UserRequest">
+        <id column="id" property="id"/>
+        <result column="telegram_login" property="telegramLogin"/>
+        <result column="telegram_user_id" property="telegramUserId"/>
+        <result column="text" property="text"/>
+        <result column="type" property="type"/>
+        <result column="user_approve" property="userApprove"/>
+        <result column="admin_approve" property="adminApprove"/>
+        <result column="posted" property="posted"/>
+        <result column="has_photo" property="hasPhoto"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="tg_account_created_at" property="tgAccountCreatedAt"/>
+        <result column="deleted" property="deleted"/>
+        <result column="in_progress" property="inProgress"/>
+    </resultMap>
+
+    <insert id="saveUserRequest" parameterType="map" useGeneratedKeys="true" keyProperty="id">
+        insert into user_request (
+        id,
+        telegram_login,
+        telegram_user_id,
+        text,
+        type,
+        user_approve,
+        admin_approve,
+        posted,
+        has_photo,
+        created_at,
+        tg_account_created_at,
+        deleted,
+        in_progress)
+        VALUES (
+        #{userRequest.id},
+        #{userRequest.telegramLogin},
+        #{userRequest.telegramUserId},
+        #{userRequest.text},
+        #{userRequest.type},
+        #{userRequest.userApprove},
+        #{userRequest.adminApprove},
+        #{userRequest.posted},
+        #{userRequest.hasPhoto},
+        #{userRequest.createdAt},
+        #{userRequest.tgAccountCreatedAt},
+        #{userRequest.deleted},
+        #{userRequest.inProgress}
+        )
+    </insert>
+
+    <select id="findActiveRequestId" parameterType="map" resultType="java.util.UUID">
+        select id
+        from user_request
+        where telegram_user_id = #{telegramUserId}
+        and in_progress = true
+    </select>
+
+    <update id="markNonActive" parameterType="map">
+        update user_request
+        set in_progress = false
+        where id = #{userRequestId}
+    </update>
+
+    <select id="findActiveRequest" parameterType="map" resultMap="userRequestMap">
+        select
+<!--        id,-->
+<!--        telegram_login,-->
+<!--        telegram_user_id,-->
+<!--        text,-->
+<!--        type,-->
+<!--        user_approve,-->
+<!--        admin_approve,-->
+<!--        posted,-->
+<!--        has_photo-->
+<!--        created_at,-->
+<!--        tg_account_created_at,-->
+<!--        deleted,-->
+<!--        in_progress-->
+        *
+        from user_request
+        where telegram_user_id = #{telegramUserId}
+        and in_progress = true
+    </select>
+</mapper>

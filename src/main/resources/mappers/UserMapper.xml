@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bot.mappers.UserMapper">
+
+    <resultMap id ="UserStateMap" type="com.bot.model.domain.UserState">
+        <result column="telegram_id" property="telegramId"/>
+        <result column="state" property="state"/>
+    </resultMap>
+
+    <select id="getUserState" resultMap="UserStateMap">
+        select telegram_id, state
+        from user_state
+        where telegram_id = #{telegramId}
+    </select>
+
+    <select id="userExist" resultType="java.lang.Boolean">
+        select exists(select 1 from user_state
+        where telegram_id = #{telegramId})
+    </select>
+
+    <insert id="saveUserState" parameterType="map">
+        insert into user_state(telegram_id, state)
+        values(#{telegramId}, #{state})
+        on conflict (telegram_id)
+        do update set
+        state = #{state}
+    </insert>
+</mapper>

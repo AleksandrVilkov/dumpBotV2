@@ -4,13 +4,31 @@ bot:
   validateData:
     channelID: -1001773791815
     channelURL: "https://t.me/dumpChenDev"
+ai:
+  uri: https://ai-textraction.p.rapidapi.com/textraction
+  key: 3956d37c9fmsh0732a142e0ba52bp1a087bjsnb52738f8949e
+  host: ai-textraction.p.rapidapi.com
+  content-type: application/json
 spring:
+  liquibase:
+    change-log: classpath:db.changelog/db.changelog-master.yaml
   datasource:
     url: jdbc:postgresql://localhost:5432/autodump
     username: autodump_user
     password: root
     driver-class-name: org.postgresql.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    minimumIdle: 10
+    maximumPoolSize: 50
+    idleTimeout: 10000
+    connectionTimeout: 45000
+    leakDetectionThreshold: 30000
+    poolName: pg-connection-pool
+    maxLifetime: 300000
 
+mybatis:
+  config-location: classpath:mybatis-config.xml
 tempStorage:
   host: 127.0.0.1
   port: 6379
+
